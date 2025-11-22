@@ -1,0 +1,103 @@
+[
+  {
+    "name": "Massachusetts Institute of Technology",
+    "country": "USA",
+    "ranking": 1,
+    "programs": ["Computer Science", "Engineering", "Business", "Physics", "Mathematics"],
+    "tuition_fees": {
+      "currency": "USD",
+      "undergraduate": 58240,
+      "graduate": 59750
+    },
+    "admission_requirements": {
+      "undergraduate": {
+        "gpa_min": 3.8,
+        "sat_min": 1500,
+        "toefl_min": 100,
+        "ielts_min": 7.5
+      },
+      "graduate": {
+        "gpa_min": 3.5,
+        "gre_quantitative_min": 165,
+        "toefl_min": 100,
+        "ielts_min": 7.5
+      }
+    },
+    "deadlines": {
+      "fall_undergrad": "2025-01-01",
+      "fall_graduate": "2024-12-15"
+    },
+    "acceptance_rate": 4.0,
+    "scholarships": ["Need-based financial aid", "Merit scholarships", "Research assistantships"],
+    "location": {
+      "city": "Cambridge",
+      "state": "Massachusetts"
+    }
+  },
+  {
+    "name": "Stanford University",
+    "country": "USA",
+    "ranking": 3,
+    "programs": ["Computer Science", "Engineering", "Business", "Medicine", "Law"],
+    "tuition_fees": {
+      "currency": "USD",
+      "undergraduate": 61731,
+      "graduate": 58746
+    },
+    "admission_requirements": {
+      "undergraduate": {
+        "gpa_min": 3.9,
+        "sat_min": 1470,
+        "toefl_min": 100,
+        "ielts_min": 7.0
+      },
+      "graduate": {
+        "gpa_min": 3.5,
+        "gre_quantitative_min": 165,
+        "toefl_min": 100
+      }
+    },
+    "deadlines": {
+      "fall_undergrad": "2025-01-05",
+      "fall_graduate": "2024-12-01"
+    },
+    "acceptance_rate": 5.0,
+    "scholarships": ["Need-based aid", "Fellowship programs"],
+    "location": {
+      "city": "Stanford",
+      "state": "California"
+    }
+  },
+  {
+    "name": "University of Cambridge",
+    "country": "UK",
+    "ranking": 5,
+    "programs": ["Engineering", "Natural Sciences", "Computer Science", "Economics", "Medicine"],
+    "tuition_fees": {
+      "currency": "GBP",
+      "undergraduate": 25734,
+      "graduate": 32214
+    },
+    "admission_requirements": {
+      "undergraduate": {
+        "a_levels": "A*A*A",
+        "ielts_min": 7.5,
+        "toefl_min": 110
+      },
+      "graduate": {
+        "degree_class": "First Class Honours",
+        "ielts_min": 7.5,
+        "toefl_min": 110
+      }
+    },
+    "deadlines": {
+      "october_entry": "2024-10-15"
+    },
+    "acceptance_rate": 21.0,
+    "scholarships": ["Cambridge Trust Scholarships", "Gates Cambridge"],
+    "location": {
+      "city": "Cambridge",
+      "region": "East Anglia"
+    }
+  }
+]
