@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { streamChatCompletion, generateChatTitle } from '@/lib/groq/client';
 import { ADVISOR_SYSTEM_PROMPT } from '@/lib/groq/prompts';
 
+// Increase timeout for Vercel (Pro plan: up to 60s, Hobby: 10s)
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
@@ -56,7 +59,9 @@ export async function POST(req: Request) {
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`));
+          console.error('Stream processing error:', error);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream error occurred' })}\n\n`));
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         }
       },
@@ -66,6 +71,10 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
     });
   } catch (error) {
-    return new Response('Internal error', { status: 500 });
+    console.error('Chat stream error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
