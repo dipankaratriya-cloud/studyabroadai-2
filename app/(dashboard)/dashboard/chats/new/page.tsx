@@ -1,41 +1,55 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function NewChatPage() {
-  const router = useRouter()
-  const [isCreating, setIsCreating] = useState(false)
+  const router = useRouter();
+  const hasCreated = useRef(false);
 
   useEffect(() => {
     async function createSession() {
-      if (isCreating) return
-      setIsCreating(true)
+      if (hasCreated.current) return;
+      hasCreated.current = true;
 
       try {
-        const response = await fetch('/api/chat/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: 'New Conversation' }),
-        })
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-        const { session } = await response.json()
-        router.push(`/dashboard/chats/${session.id}`)
+        if (!user) {
+          router.push('/login');
+          return;
+        }
+
+        const { data: session, error } = await supabase
+          .from('chat_sessions')
+          .insert({
+            user_id: user.id,
+            title: 'New Conversation',
+            messages: [],
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        router.push(`/dashboard/chats/${session.id}`);
       } catch (error) {
-        console.error('Error creating session:', error)
-        setIsCreating(false)
+        console.error('Error creating session:', error);
+        hasCreated.current = false;
       }
     }
 
-    createSession()
-  }, [router, isCreating])
+    createSession();
+  }, [router]);
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Creating your chat session...</p>
+        <p className="text-muted-foreground">Creating your chat session...</p>
       </div>
     </div>
-  )
+  );
 }

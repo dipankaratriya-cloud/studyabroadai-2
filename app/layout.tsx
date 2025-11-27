@@ -1,28 +1,25 @@
-import type { Metadata } from "next"
-import { Lexend } from "next/font/google"
-import "./globals.css"
-
-const lexend = Lexend({ subsets: ["latin"], variable: "--font-display" })
+import type { Metadata } from "next";
+import "./globals.css";
+import { ClientProviders } from "@/components/providers/ClientProviders";
 
 export const metadata: Metadata = {
   title: "StudyAbroadAI - Your Journey to Study Abroad Starts Here",
   description: "AI-powered guidance for Indian students pursuing global education",
-}
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-          rel="stylesheet"
-        />
+        <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className={lexend.variable}>{children}</body>
+      <body className="font-display">
+        <ClientProviders>{children}</ClientProviders>
+      </body>
     </html>
-  )
+  );
 }

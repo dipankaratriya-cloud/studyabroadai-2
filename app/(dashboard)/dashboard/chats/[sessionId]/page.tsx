@@ -1,433 +1,316 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { UniversityCard } from '@/components/chat/UniversityCard'
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { parseCollegeRecommendations, hasCollegeRecommendations, CollegeRecommendation } from '@/lib/xmlParser';
+import { CollegeCard } from '@/components/CollegeCard';
+import { ComparisonCard } from '@/components/ComparisonCard';
+import { Button } from '@/components/ui/button';
+import { GitCompare, X, Bookmark, MapPin, Check } from 'lucide-react';
 
 interface Message {
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: string
-  universities?: University[]
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
 }
 
-interface University {
-  name: string
-  country: string
-  ranking?: number
-  tuition?: string
-  acceptanceRate?: string
-  logo?: string
+interface MessageContentProps {
+  content: string;
+  onCompare: (college: CollegeRecommendation) => void;
+  onSave: (college: CollegeRecommendation) => void;
+  selectedColleges: CollegeRecommendation[];
+  savedColleges: CollegeRecommendation[];
+  isStreaming?: boolean;
 }
 
-interface StudentProfile {
-  education_level?: string
-  field_of_interest?: string
-  budget_min?: number
-  budget_max?: number
-  budget_currency?: string
-  preferred_countries?: string[]
+// Helper to detect if content has partial/incomplete XML
+function hasPartialXml(content: string): boolean {
+  // Check if there's an opening tag without matching closing tag
+  const openTags = (content.match(/<college_recommendation>/g) || []).length;
+  const closeTags = (content.match(/<\/college_recommendation>/g) || []).length;
+  return openTags > closeTags;
+}
+
+// Helper to filter out XML content from display during streaming
+function getStreamingDisplayText(content: string): string {
+  // Remove any complete XML blocks
+  let text = content.replace(/<college_recommendation>[\s\S]*?<\/college_recommendation>/g, '');
+  // Remove any partial XML that's being streamed (from opening tag onwards)
+  const partialXmlStart = text.indexOf('<college_recommendation>');
+  if (partialXmlStart !== -1) {
+    text = text.substring(0, partialXmlStart);
+  }
+  // Also remove any partial tags like "<college" or "<college_rec..."
+  const partialTagMatch = text.match(/<college[^>]*$/);
+  if (partialTagMatch) {
+    text = text.substring(0, text.length - partialTagMatch[0].length);
+  }
+  return text.trim();
+}
+
+function MessageContent({ content, onCompare, onSave, selectedColleges, savedColleges, isStreaming }: MessageContentProps) {
+  // During streaming, check if XML is being generated
+  const hasXmlContent = /<college/.test(content);
+  const isXmlComplete = hasCollegeRecommendations(content) && !hasPartialXml(content);
+
+  // If streaming and XML is being generated but not complete, show loading state
+  if (isStreaming && hasXmlContent && !isXmlComplete) {
+    const displayText = getStreamingDisplayText(content);
+    return (
+      <div className="space-y-4">
+        {displayText && (
+          <div className="whitespace-pre-wrap mb-4">{displayText}</div>
+        )}
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+            <div>
+              <p className="font-medium">Generating university recommendations...</p>
+              <p className="text-sm text-muted-foreground">Analyzing best matches for your profile</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasCollegeRecommendations(content)) {
+    return <div className="whitespace-pre-wrap">{content}</div>;
+  }
+
+  const { colleges, cleanedText } = parseCollegeRecommendations(content);
+  const compareDisabled = selectedColleges.length >= 3;
+
+  return (
+    <div className="space-y-4">
+      {cleanedText && (
+        <div className="whitespace-pre-wrap mb-4">{cleanedText}</div>
+      )}
+      {colleges.length > 0 && (
+        <div className="space-y-4 max-w-3xl">
+          {colleges.map((college, idx) => (
+            <CollegeCard
+              key={idx}
+              college={college}
+              onCompare={onCompare}
+              onSave={onSave}
+              isSelected={selectedColleges.some(c => c.name === college.name)}
+              isSaved={savedColleges.some(c => c.name === college.name)}
+              compareDisabled={compareDisabled}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ChatPage() {
-  const params = useParams()
-  const router = useRouter()
-  const sessionId = params.sessionId as string
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [profile, setProfile] = useState<StudentProfile | null>(null)
-  const [sessionTitle, setSessionTitle] = useState('New Conversation')
-  const [savedUniversities, setSavedUniversities] = useState<University[]>([])
-  const [savedCountries, setSavedCountries] = useState<string[]>([])
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const params = useParams();
+  const router = useRouter();
+  const sessionId = params.sessionId as string;
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [selectedColleges, setSelectedColleges] = useState<CollegeRecommendation[]>([]);
+  const [savedColleges, setSavedColleges] = useState<CollegeRecommendation[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparisonSaved, setComparisonSaved] = useState(false);
+  const [savingComparison, setSavingComparison] = useState(false);
 
-  // Load session
-  useEffect(() => {
-    async function loadSession() {
+  const handleSaveToggle = useCallback((college: CollegeRecommendation) => {
+    setSavedColleges(prev => {
+      const isAlreadySaved = prev.some(c => c.name === college.name);
+      if (isAlreadySaved) {
+        return prev.filter(c => c.name !== college.name);
+      }
+      return [...prev, college];
+    });
+  }, []);
+
+  const handleRemoveFromSaved = useCallback((collegeName: string) => {
+    setSavedColleges(prev => prev.filter(c => c.name !== collegeName));
+  }, []);
+
+  const handleCompareToggle = useCallback((college: CollegeRecommendation) => {
+    setSelectedColleges(prev => {
+      const isAlreadySelected = prev.some(c => c.name === college.name);
+      if (isAlreadySelected) {
+        return prev.filter(c => c.name !== college.name);
+      }
+      if (prev.length >= 3) return prev;
+      return [...prev, college];
+    });
+  }, []);
+
+  const handleRemoveFromComparison = useCallback((collegeName: string) => {
+    setSelectedColleges(prev => prev.filter(c => c.name !== collegeName));
+  }, []);
+
+  const handleShowComparison = useCallback(async () => {
+    if (selectedColleges.length >= 2) {
+      setShowComparison(true);
+      setComparisonSaved(false);
+      setSavingComparison(true);
+
+      // Automatically save comparison to database
       try {
-        const response = await fetch(`/api/chat/${sessionId}`)
-        const { session } = await response.json()
-        setMessages(session.messages || [])
-        setProfile(session.student_profile)
-        setSessionTitle(session.title || 'New Conversation')
-        setIsLoading(false)
+        const response = await fetch('/api/comparisons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            colleges: selectedColleges,
+            comparisonTitle: `Comparing ${selectedColleges.map(c => c.name?.split(' ')[0]).join(' vs ')}`,
+            comparisonSummary: `Comparison of ${selectedColleges.length} universities: ${selectedColleges.map(c => c.name).join(', ')}`,
+          }),
+        });
+
+        if (response.ok) {
+          setComparisonSaved(true);
+        }
       } catch (error) {
-        console.error('Error loading session:', error)
-        setIsLoading(false)
+        console.error('Error saving comparison:', error);
+      } finally {
+        setSavingComparison(false);
       }
     }
+  }, [selectedColleges, sessionId]);
 
-    loadSession()
-  }, [sessionId])
+  const handleCloseComparison = useCallback(() => {
+    setShowComparison(false);
+    setComparisonSaved(false);
+  }, []);
 
-  // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    async function loadSession() {
+      const res = await fetch(`/api/chat/${sessionId}`);
+      const { session } = await res.json();
+      setMessages(session?.messages || []);
+      setProfile(session?.student_profile);
+      setLoading(false);
+    }
+    loadSession();
+  }, [sessionId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim() || isStreaming) return
+    if (!input.trim() || isStreaming) return;
 
-    const userMessage: Message = {
-      role: 'user',
-      content: input,
-      timestamp: new Date().toISOString(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
-    setIsStreaming(true)
+    const userMessage: Message = { role: 'user', content: input, timestamp: new Date().toISOString() };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsStreaming(true);
 
     try {
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input, sessionId }),
-      })
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(errorData.error || `Server error: ${response.status}`)
-      }
+      if (!response.ok || !response.body) throw new Error('Stream failed');
 
-      if (!response.body) throw new Error('No response body')
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let aiMessage = ''
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let aiMessage = '';
 
       while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') break
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
 
             try {
-              const parsed = JSON.parse(data)
-              if (parsed.error) {
-                console.error('Stream error:', parsed.error)
-                aiMessage = `Error: ${parsed.error}`
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    role: 'assistant',
-                    content: aiMessage,
-                    timestamp: new Date().toISOString(),
-                  },
-                ])
-                break
-              }
+              const parsed = JSON.parse(data);
               if (parsed.content) {
-                aiMessage += parsed.content
-                setMessages((prev) => {
-                  const lastMsg = prev[prev.length - 1]
+                aiMessage += parsed.content;
+                setMessages(prev => {
+                  const lastMsg = prev[prev.length - 1];
                   if (lastMsg?.role === 'assistant') {
-                    return [
-                      ...prev.slice(0, -1),
-                      { ...lastMsg, content: aiMessage },
-                    ]
+                    return [...prev.slice(0, -1), { ...lastMsg, content: aiMessage }];
                   }
-                  return [
-                    ...prev,
-                    {
-                      role: 'assistant',
-                      content: aiMessage,
-                      timestamp: new Date().toISOString(),
-                    },
-                  ]
-                })
+                  return [...prev, { role: 'assistant', content: aiMessage, timestamp: new Date().toISOString() }];
+                });
               }
-            } catch (e) {
-              console.error('JSON parse error:', e)
-            }
+            } catch {}
           }
         }
       }
-
-      if (aiMessage.length === 0) {
-        throw new Error('No response received from the AI')
-      }
     } catch (error) {
-      console.error('Error streaming:', error)
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
-          timestamp: new Date().toISOString(),
-        },
-      ])
+      console.error('Error:', error);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, error occurred.', timestamp: new Date().toISOString() }]);
     } finally {
-      setIsStreaming(false)
+      setIsStreaming(false);
     }
-  }
+  };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
-
-  const handleClearChat = async () => {
-    if (confirm('Are you sure you want to clear this chat?')) {
-      try {
-        await fetch(`/api/chat/${sessionId}`, {
-          method: 'DELETE',
-        })
-        router.push('/dashboard/chats')
-      } catch (error) {
-        console.error('Error clearing chat:', error)
-      }
-    }
-  }
-
-  const handleSaveUniversity = (university: University) => {
-    setSavedUniversities((prev) => {
-      const exists = prev.find((u) => u.name === university.name)
-      if (exists) return prev
-      return [...prev, university]
-    })
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading chat...</p>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <div className="flex items-center justify-center h-screen"><div className="text-gray-600">Loading...</div></div>;
 
   return (
-    <div className="flex h-screen w-full font-display">
-      {/* Left Sidebar */}
-      <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <div className="flex flex-col justify-between h-full">
-          <div className="flex flex-col gap-6">
-            {/* Session Title */}
-            <div className="flex items-center gap-2 group">
-              <h1 className="text-base font-semibold">{sessionTitle}</h1>
-              <span className="material-symbols-outlined text-lg text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                edit
-              </span>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400">
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 text-left">
-                <span className="material-symbols-outlined text-lg">download</span>
-                <span>Download PDF Report</span>
-              </button>
-              <button
-                onClick={handleClearChat}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 text-left"
-              >
-                <span className="material-symbols-outlined text-lg">delete</span>
-                <span>Clear Chat</span>
-              </button>
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 text-left">
-                <span className="material-symbols-outlined text-lg">archive</span>
-                <span>Archive</span>
-              </button>
-            </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-            {/* Student Profile */}
-            <div>
-              <h2 className="px-3 text-sm font-semibold mb-2">Student Profile</h2>
-              <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm">
-                {profile?.education_level && (
-                  <>
-                    <p className="text-gray-500 dark:text-gray-400">Education</p>
-                    <p className="font-medium">{profile.education_level}</p>
-                  </>
-                )}
-                {profile?.field_of_interest && (
-                  <>
-                    <p className="text-gray-500 dark:text-gray-400">Field</p>
-                    <p className="font-medium">{profile.field_of_interest}</p>
-                  </>
-                )}
-                {profile?.budget_min && profile?.budget_max && (
-                  <>
-                    <p className="text-gray-500 dark:text-gray-400">Budget</p>
-                    <p className="font-medium">
-                      {profile.budget_currency} {profile.budget_min} - {profile.budget_max}/year
-                    </p>
-                  </>
-                )}
-                {profile?.preferred_countries && profile.preferred_countries.length > 0 && (
-                  <>
-                    <p className="text-gray-500 dark:text-gray-400">Preferences</p>
-                    <p className="font-medium">{profile.preferred_countries.join(', ')}</p>
-                  </>
-                )}
-                {!profile?.education_level && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 col-span-2">
-                    Profile will be built as we chat
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-            {/* Saved Items */}
-            <div>
-              <h2 className="px-3 text-sm font-semibold mb-2">Saved Items</h2>
-              <div className="flex flex-col gap-1 text-sm font-medium">
-                <button className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 bg-primary/10 text-primary text-left">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-lg">school</span>
-                    <span>Universities</span>
-                  </div>
-                  <span className="text-xs font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                    {savedUniversities.length}
-                  </span>
-                </button>
-                <button className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 text-left">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-lg">public</span>
-                    <span>Countries</span>
-                  </div>
-                  <span className="text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
-                    {savedCountries.length}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <button className="flex w-full cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold hover:bg-primary/90">
-            <span>Edit Profile</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Chat Area */}
-      <main className="flex flex-1 flex-col h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 bg-white dark:bg-gray-800">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold">{sessionTitle}</h1>
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
-          </div>
-          <div className="flex gap-2">
-            <button className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
-              <span className="material-symbols-outlined text-gray-600 dark:text-gray-400">share</span>
-            </button>
-            <button className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
-              <span className="material-symbols-outlined text-gray-600 dark:text-gray-400">settings</span>
-            </button>
-          </div>
+    <div className="flex h-full w-full">
+      {/* Main Chat */}
+      <main className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+        <header className="h-16 border-b bg-white dark:bg-gray-800 flex items-center px-6">
+          <h1 className="font-semibold">Chat with Aanya</h1>
+          {isStreaming && <div className="ml-3 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
         </header>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.length === 0 && (
-            <div className="flex items-start gap-3 max-w-2xl">
-              <div className="bg-primary/10 rounded-full size-8 shrink-0 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary">smart_toy</span>
-              </div>
-              <div className="flex flex-1 flex-col gap-2 items-start">
-                <p className="text-sm font-semibold">StudyAbroadAI</p>
-                <p className="text-base font-normal leading-relaxed flex rounded-lg rounded-tl-none px-4 py-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
-                  Hello! I'm Aanya, your study abroad advisor. What stage of education are you in right now?
-                </p>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">🤖</div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm max-w-2xl">
+                Hello! I&apos;m Aanya, your study abroad advisor. What stage of education are you in right now?
               </div>
             </div>
           )}
 
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex items-start gap-3 ${
-                message.role === 'user' ? 'justify-end' : 'max-w-2xl'
-              }`}
-            >
-              {message.role === 'assistant' && (
-                <div className="bg-primary/10 rounded-full size-8 shrink-0 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary">smart_toy</span>
-                </div>
-              )}
-              <div className={`flex flex-1 flex-col gap-2 ${message.role === 'user' ? 'items-end max-w-2xl' : 'items-start w-full'}`}>
-                <p className="text-sm font-semibold">
-                  {message.role === 'user' ? 'You' : 'StudyAbroadAI'}
-                </p>
-                <p
-                  className={`text-base font-normal leading-relaxed flex rounded-lg ${
-                    message.role === 'user'
-                      ? 'rounded-br-none px-4 py-3 bg-primary text-white'
-                      : 'rounded-tl-none px-4 py-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700'
-                  } whitespace-pre-wrap`}
-                >
-                  {message.content}
-                </p>
-                {message.universities && message.universities.length > 0 && (
-                  <div className="w-full space-y-3 mt-2">
-                    {message.universities.map((university, idx) => (
-                      <UniversityCard
-                        key={idx}
-                        {...university}
-                        onCompare={() => handleSaveUniversity(university)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-              {message.role === 'user' && (
-                <div className="bg-gray-300 dark:bg-gray-700 rounded-full size-8 shrink-0 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-gray-600 dark:text-gray-300">person</span>
-                </div>
-              )}
-            </div>
-          ))}
+          {messages.map((msg, i) => {
+            const isLastMessage = i === messages.length - 1;
+            const isStreamingMessage = isStreaming && isLastMessage && msg.role === 'assistant';
 
-          {isStreaming && (
-            <div className="flex items-start gap-3 max-w-2xl">
-              <div className="bg-primary/10 rounded-full size-8 shrink-0 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary">smart_toy</span>
-              </div>
-              <div className="flex flex-1 flex-col gap-2 items-start">
-                <p className="text-sm font-semibold">StudyAbroadAI</p>
-                <div className="flex items-center gap-2 text-base font-normal leading-relaxed rounded-lg rounded-tl-none px-4 py-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
-                  <svg
-                    className="animate-spin h-5 w-5 text-primary"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  <span>Thinking...</span>
+            return (
+              <div key={i} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                {msg.role === 'assistant' && <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">🤖</div>}
+                <div className={`rounded-lg p-4 ${msg.role === 'user' ? 'max-w-2xl bg-primary text-white' : 'max-w-full'} ${msg.role === 'assistant' && !hasCollegeRecommendations(msg.content) ? 'max-w-2xl bg-white dark:bg-gray-800 shadow-sm' : ''}`}>
+                  {msg.role === 'user' ? (
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  ) : (
+                    <MessageContent
+                      content={msg.content}
+                      onCompare={handleCompareToggle}
+                      onSave={handleSaveToggle}
+                      selectedColleges={selectedColleges}
+                      savedColleges={savedColleges}
+                      isStreaming={isStreamingMessage}
+                    />
+                  )}
                 </div>
+                {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">👤</div>}
+              </div>
+            );
+          })}
+
+          {/* Only show Thinking... if streaming hasn't produced any content yet */}
+          {isStreaming && (!messages.length || messages[messages.length - 1]?.role !== 'assistant') && (
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">🤖</div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                Thinking...
               </div>
             </div>
           )}
@@ -435,102 +318,175 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="px-6 pb-6 pt-4 shrink-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 bg-white dark:bg-gray-800 border-t">
           <div className="relative">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask about universities, costs, visa requirements..."
+              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+              placeholder="Ask about universities, costs, visa..."
               disabled={isStreaming}
-              className="w-full h-12 pl-4 pr-14 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary focus:border-primary transition-shadow shadow-sm"
-              type="text"
+              className="w-full h-12 pl-4 pr-14 rounded-lg border focus:ring-2 focus:ring-primary"
             />
             <button
               onClick={sendMessage}
               disabled={isStreaming || !input.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center size-8 rounded-md bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded bg-primary text-white disabled:opacity-50 flex items-center justify-center"
             >
-              <span className="material-symbols-outlined text-xl">send</span>
+              →
             </button>
           </div>
         </div>
       </main>
 
       {/* Right Sidebar */}
-      <aside className="flex h-full w-[280px] shrink-0 flex-col border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <div className="flex flex-col h-full">
-          <h2 className="text-base font-semibold mb-4">Quick Reference</h2>
-          <div className="flex-1 space-y-4 overflow-y-auto">
-            {/* Saved Universities */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                Saved Universities
-              </h3>
-              <div className="space-y-2">
-                {savedUniversities.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Universities you save will appear here
-                  </p>
-                ) : (
-                  savedUniversities.map((university, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-200 dark:bg-gray-700 rounded-full size-8 shrink-0 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-sm">school</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold">{university.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {university.country}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+      <aside className="w-[280px] border-l bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
+        {/* Compare Section - Top Half */}
+        <div className="p-4 flex-1 overflow-y-auto border-b">
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <GitCompare className="h-4 w-4" />
+            Compare Colleges
+          </h2>
 
-            {/* Saved Countries */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                Saved Countries
-              </h3>
-              <div className="space-y-2">
-                {savedCountries.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Countries you save will appear here
-                  </p>
-                ) : (
-                  savedCountries.map((country, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-200 dark:bg-gray-700 rounded-full size-8 shrink-0 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-sm">public</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold">{country}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+          {selectedColleges.length === 0 ? (
+            <div className="text-sm text-gray-500">
+              <p>Select up to 3 colleges to compare.</p>
+              <p className="mt-2 text-xs">Click &quot;Compare&quot; on any college card.</p>
             </div>
-          </div>
-          <button className="flex w-full cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm font-bold mt-4 hover:bg-gray-300 dark:hover:bg-gray-600">
-            <span>Export Chat</span>
-          </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{selectedColleges.length}/3 selected</p>
+              {selectedColleges.map((college, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2 bg-primary/5 rounded-lg border border-primary/20"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{college.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {college.city}, {college.country}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 ml-2 flex-shrink-0"
+                    onClick={() => handleRemoveFromComparison(college.name)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+
+              {selectedColleges.length >= 2 && (
+                <Button
+                  className="w-full mt-3"
+                  size="sm"
+                  onClick={handleShowComparison}
+                >
+                  <GitCompare className="mr-2 h-4 w-4" />
+                  Compare {selectedColleges.length} Colleges
+                </Button>
+              )}
+
+              {selectedColleges.length === 1 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Select at least one more to compare.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Saved Universities Section - Bottom Half */}
+        <div className="p-4 flex-1 overflow-y-auto">
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <Bookmark className="h-4 w-4" />
+            Saved Universities
+          </h2>
+
+          {savedColleges.length === 0 ? (
+            <div className="text-sm text-gray-500">
+              <p>No universities saved yet.</p>
+              <p className="mt-2 text-xs">Click the bookmark icon on any college card to save it.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{savedColleges.length} saved</p>
+              {savedColleges.map((college, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{college.name}</p>
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {college.city}, {college.country}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 ml-2 flex-shrink-0 hover:text-destructive"
+                    onClick={() => handleRemoveFromSaved(college.name)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </aside>
+
+      {/* Floating Comparison Bar */}
+      {selectedColleges.length >= 2 && !showComparison && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+          <Button
+            size="lg"
+            className="shadow-lg"
+            onClick={handleShowComparison}
+          >
+            <GitCompare className="mr-2 h-5 w-5" />
+            Compare {selectedColleges.length} Colleges
+          </Button>
+        </div>
+      )}
+
+      {/* Comparison Modal */}
+      {showComparison && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            {/* Save Status Indicator */}
+            <div className="mb-2 flex justify-center">
+              {savingComparison && (
+                <div className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 shadow-lg">
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  Saving to Comparisons...
+                </div>
+              )}
+              {comparisonSaved && !savingComparison && (
+                <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 shadow-lg">
+                  <Check className="h-4 w-4" />
+                  Saved to Comparisons
+                  <button
+                    onClick={() => router.push('/dashboard/comparisons')}
+                    className="ml-2 underline hover:no-underline"
+                  >
+                    View All
+                  </button>
+                </div>
+              )}
+            </div>
+            <ComparisonCard
+              colleges={selectedColleges}
+              onClose={handleCloseComparison}
+              onRemoveCollege={handleRemoveFromComparison}
+            />
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
