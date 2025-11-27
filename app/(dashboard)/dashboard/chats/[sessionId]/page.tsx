@@ -6,7 +6,7 @@ import { parseCollegeRecommendations, hasCollegeRecommendations, CollegeRecommen
 import { CollegeCard } from '@/components/CollegeCard';
 import { ComparisonCard } from '@/components/ComparisonCard';
 import { Button } from '@/components/ui/button';
-import { GitCompare, X, Bookmark, MapPin, Check } from 'lucide-react';
+import { GitCompare, X, Bookmark, MapPin, Check, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -23,24 +23,18 @@ interface MessageContentProps {
   isStreaming?: boolean;
 }
 
-// Helper to detect if content has partial/incomplete XML
 function hasPartialXml(content: string): boolean {
-  // Check if there's an opening tag without matching closing tag
   const openTags = (content.match(/<college_recommendation>/g) || []).length;
   const closeTags = (content.match(/<\/college_recommendation>/g) || []).length;
   return openTags > closeTags;
 }
 
-// Helper to filter out XML content from display during streaming
 function getStreamingDisplayText(content: string): string {
-  // Remove any complete XML blocks
   let text = content.replace(/<college_recommendation>[\s\S]*?<\/college_recommendation>/g, '');
-  // Remove any partial XML that's being streamed (from opening tag onwards)
   const partialXmlStart = text.indexOf('<college_recommendation>');
   if (partialXmlStart !== -1) {
     text = text.substring(0, partialXmlStart);
   }
-  // Also remove any partial tags like "<college" or "<college_rec..."
   const partialTagMatch = text.match(/<college[^>]*$/);
   if (partialTagMatch) {
     text = text.substring(0, text.length - partialTagMatch[0].length);
@@ -49,24 +43,24 @@ function getStreamingDisplayText(content: string): string {
 }
 
 function MessageContent({ content, onCompare, onSave, selectedColleges, savedColleges, isStreaming }: MessageContentProps) {
-  // During streaming, check if XML is being generated
   const hasXmlContent = /<college/.test(content);
   const isXmlComplete = hasCollegeRecommendations(content) && !hasPartialXml(content);
 
-  // If streaming and XML is being generated but not complete, show loading state
   if (isStreaming && hasXmlContent && !isXmlComplete) {
     const displayText = getStreamingDisplayText(content);
     return (
       <div className="space-y-4">
         {displayText && (
-          <div className="whitespace-pre-wrap mb-4">{displayText}</div>
+          <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div>
         )}
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
           <div className="flex items-center gap-3">
-            <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white animate-pulse" />
+            </div>
             <div>
-              <p className="font-medium">Generating university recommendations...</p>
-              <p className="text-sm text-muted-foreground">Analyzing best matches for your profile</p>
+              <p className="font-semibold">Finding best universities for you...</p>
+              <p className="text-sm text-muted-foreground">Analyzing your profile and preferences</p>
             </div>
           </div>
         </div>
@@ -75,7 +69,7 @@ function MessageContent({ content, onCompare, onSave, selectedColleges, savedCol
   }
 
   if (!hasCollegeRecommendations(content)) {
-    return <div className="whitespace-pre-wrap">{content}</div>;
+    return <div className="whitespace-pre-wrap leading-relaxed">{content}</div>;
   }
 
   const { colleges, cleanedText } = parseCollegeRecommendations(content);
@@ -84,7 +78,7 @@ function MessageContent({ content, onCompare, onSave, selectedColleges, savedCol
   return (
     <div className="space-y-4">
       {cleanedText && (
-        <div className="whitespace-pre-wrap mb-4">{cleanedText}</div>
+        <div className="whitespace-pre-wrap leading-relaxed mb-4">{cleanedText}</div>
       )}
       {colleges.length > 0 && (
         <div className="space-y-4 max-w-3xl">
@@ -115,6 +109,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [selectedColleges, setSelectedColleges] = useState<CollegeRecommendation[]>([]);
   const [savedColleges, setSavedColleges] = useState<CollegeRecommendation[]>([]);
   const [showComparison, setShowComparison] = useState(false);
@@ -156,7 +151,6 @@ export default function ChatPage() {
       setComparisonSaved(false);
       setSavingComparison(true);
 
-      // Automatically save comparison to database
       try {
         const response = await fetch('/api/comparisons', {
           method: 'POST',
@@ -251,115 +245,176 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error('Error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, error occurred.', timestamp: new Date().toISOString() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, an error occurred. Please try again.', timestamp: new Date().toISOString() }]);
     } finally {
       setIsStreaming(false);
+      inputRef.current?.focus();
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-screen"><div className="text-gray-600">Loading...</div></div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading conversation...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-full w-full">
+    <div className="flex h-full w-full bg-background">
       {/* Main Chat */}
-      <main className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
-        <header className="h-16 border-b bg-white dark:bg-gray-800 flex items-center px-6">
-          <h1 className="font-semibold">Chat with Aanya</h1>
-          {isStreaming && <div className="ml-3 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
+      <main className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="h-16 border-b bg-card flex items-center px-6 gap-3">
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+            <Bot className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="font-semibold">Aanya - AI Advisor</h1>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              {isStreaming ? (
+                <>
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  Responding...
+                </>
+              ) : (
+                'Online'
+              )}
+            </p>
+          </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {messages.length === 0 && (
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">🤖</div>
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm max-w-2xl">
-                Hello! I&apos;m Aanya, your study abroad advisor. What stage of education are you in right now?
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg, i) => {
-            const isLastMessage = i === messages.length - 1;
-            const isStreamingMessage = isStreaming && isLastMessage && msg.role === 'assistant';
-
-            return (
-              <div key={i} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                {msg.role === 'assistant' && <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">🤖</div>}
-                <div className={`rounded-lg p-4 ${msg.role === 'user' ? 'max-w-2xl bg-primary text-white' : 'max-w-full'} ${msg.role === 'assistant' && !hasCollegeRecommendations(msg.content) ? 'max-w-2xl bg-white dark:bg-gray-800 shadow-sm' : ''}`}>
-                  {msg.role === 'user' ? (
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
-                  ) : (
-                    <MessageContent
-                      content={msg.content}
-                      onCompare={handleCompareToggle}
-                      onSave={handleSaveToggle}
-                      selectedColleges={selectedColleges}
-                      savedColleges={savedColleges}
-                      isStreaming={isStreamingMessage}
-                    />
-                  )}
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {messages.length === 0 && (
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+                  <Bot className="h-5 w-5 text-white" />
                 </div>
-                {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">👤</div>}
+                <div className="bg-card rounded-2xl rounded-tl-none p-5 shadow-sm border max-w-2xl">
+                  <p className="leading-relaxed">
+                    Hello! I&apos;m Aanya, your AI study abroad advisor. I&apos;m here to help you find the perfect university and guide you through the entire application process.
+                  </p>
+                  <p className="mt-3 leading-relaxed">
+                    To get started, could you tell me what stage of education you&apos;re currently in?
+                  </p>
+                </div>
               </div>
-            );
-          })}
+            )}
 
-          {/* Only show Thinking... if streaming hasn't produced any content yet */}
-          {isStreaming && (!messages.length || messages[messages.length - 1]?.role !== 'assistant') && (
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">🤖</div>
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm flex items-center gap-2">
-                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                Thinking...
+            {messages.map((msg, i) => {
+              const isLastMessage = i === messages.length - 1;
+              const isStreamingMessage = isStreaming && isLastMessage && msg.role === 'assistant';
+
+              return (
+                <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    msg.role === 'assistant' ? 'gradient-primary' : 'bg-muted'
+                  }`}>
+                    {msg.role === 'assistant' ? (
+                      <Bot className="h-5 w-5 text-white" />
+                    ) : (
+                      <User className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className={`max-w-2xl ${msg.role === 'user' ? 'text-right' : ''}`}>
+                    <div className={`inline-block p-5 shadow-sm ${
+                      msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-none'
+                        : hasCollegeRecommendations(msg.content)
+                          ? 'bg-transparent shadow-none p-0'
+                          : 'bg-card border rounded-2xl rounded-tl-none'
+                    }`}>
+                      {msg.role === 'user' ? (
+                        <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                      ) : (
+                        <MessageContent
+                          content={msg.content}
+                          onCompare={handleCompareToggle}
+                          onSave={handleSaveToggle}
+                          selectedColleges={selectedColleges}
+                          savedColleges={savedColleges}
+                          isStreaming={isStreamingMessage}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {isStreaming && (!messages.length || messages[messages.length - 1]?.role !== 'assistant') && (
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+                  <Bot className="h-5 w-5 text-white" />
+                </div>
+                <div className="bg-card rounded-2xl rounded-tl-none p-5 shadow-sm border">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span className="text-muted-foreground">Thinking...</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
-        <div className="p-4 bg-white dark:bg-gray-800 border-t">
-          <div className="relative">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-              placeholder="Ask about universities, costs, visa..."
-              disabled={isStreaming}
-              className="w-full h-12 pl-4 pr-14 rounded-lg border focus:ring-2 focus:ring-primary"
-            />
-            <button
-              onClick={sendMessage}
-              disabled={isStreaming || !input.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded bg-primary text-white disabled:opacity-50 flex items-center justify-center"
-            >
-              →
-            </button>
+        {/* Input */}
+        <div className="p-4 bg-card border-t">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative flex items-center">
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                placeholder="Ask about universities, scholarships, visa requirements..."
+                disabled={isStreaming}
+                className="input-field pr-14 h-14 text-base"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={isStreaming || !input.trim()}
+                className="absolute right-2 w-10 h-10 rounded-xl gradient-primary text-white disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-lg hover:shadow-primary/25 disabled:hover:shadow-none"
+              >
+                {isStreaming ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </main>
 
       {/* Right Sidebar */}
-      <aside className="w-[280px] border-l bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
-        {/* Compare Section - Top Half */}
-        <div className="p-4 flex-1 overflow-y-auto border-b">
-          <h2 className="font-semibold mb-3 flex items-center gap-2">
-            <GitCompare className="h-4 w-4" />
+      <aside className="w-72 border-l bg-card flex flex-col overflow-hidden">
+        {/* Compare Section */}
+        <div className="p-5 flex-1 overflow-y-auto border-b">
+          <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <GitCompare className="h-4 w-4 text-primary" />
             Compare Colleges
           </h2>
 
           {selectedColleges.length === 0 ? (
-            <div className="text-sm text-gray-500">
-              <p>Select up to 3 colleges to compare.</p>
-              <p className="mt-2 text-xs">Click &quot;Compare&quot; on any college card.</p>
+            <div className="text-sm text-muted-foreground bg-muted/50 rounded-xl p-4">
+              <p className="font-medium mb-1">No colleges selected</p>
+              <p className="text-xs">Select up to 3 colleges to compare side by side.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">{selectedColleges.length}/3 selected</p>
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-medium">{selectedColleges.length}/3 selected</p>
               {selectedColleges.map((college, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 bg-primary/5 rounded-lg border border-primary/20"
+                  className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{college.name}</p>
@@ -370,53 +425,52 @@ export default function ChatPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 ml-2 flex-shrink-0"
+                    className="h-7 w-7 p-0 ml-2 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => handleRemoveFromComparison(college.name)}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
 
               {selectedColleges.length >= 2 && (
                 <Button
-                  className="w-full mt-3"
-                  size="sm"
+                  className="w-full mt-2 h-10"
                   onClick={handleShowComparison}
                 >
                   <GitCompare className="mr-2 h-4 w-4" />
-                  Compare {selectedColleges.length} Colleges
+                  Compare Now
                 </Button>
               )}
 
               {selectedColleges.length === 1 && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Select at least one more to compare.
+                <p className="text-xs text-muted-foreground text-center py-2">
+                  Add one more to compare
                 </p>
               )}
             </div>
           )}
         </div>
 
-        {/* Saved Universities Section - Bottom Half */}
-        <div className="p-4 flex-1 overflow-y-auto">
-          <h2 className="font-semibold mb-3 flex items-center gap-2">
-            <Bookmark className="h-4 w-4" />
+        {/* Saved Section */}
+        <div className="p-5 flex-1 overflow-y-auto">
+          <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <Bookmark className="h-4 w-4 text-amber-500" />
             Saved Universities
           </h2>
 
           {savedColleges.length === 0 ? (
-            <div className="text-sm text-gray-500">
-              <p>No universities saved yet.</p>
-              <p className="mt-2 text-xs">Click the bookmark icon on any college card to save it.</p>
+            <div className="text-sm text-muted-foreground bg-muted/50 rounded-xl p-4">
+              <p className="font-medium mb-1">No universities saved</p>
+              <p className="text-xs">Bookmark colleges you like for quick access.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">{savedColleges.length} saved</p>
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-medium">{savedColleges.length} saved</p>
               {savedColleges.map((college, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800"
+                  className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{college.name}</p>
@@ -428,10 +482,10 @@ export default function ChatPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 ml-2 flex-shrink-0 hover:text-destructive"
+                    className="h-7 w-7 p-0 ml-2 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => handleRemoveFromSaved(college.name)}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
@@ -440,12 +494,12 @@ export default function ChatPage() {
         </div>
       </aside>
 
-      {/* Floating Comparison Bar */}
+      {/* Floating Compare Button */}
       {selectedColleges.length >= 2 && !showComparison && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
           <Button
             size="lg"
-            className="shadow-lg"
+            className="shadow-xl hover:shadow-2xl h-12 px-6"
             onClick={handleShowComparison}
           >
             <GitCompare className="mr-2 h-5 w-5" />
@@ -456,23 +510,22 @@ export default function ChatPage() {
 
       {/* Comparison Modal */}
       {showComparison && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            {/* Save Status Indicator */}
-            <div className="mb-2 flex justify-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto animate-scale-in">
+            <div className="mb-3 flex justify-center">
               {savingComparison && (
-                <div className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 shadow-lg">
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  Saving to Comparisons...
+                <div className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-sm flex items-center gap-2 shadow-lg">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving comparison...
                 </div>
               )}
               {comparisonSaved && !savingComparison && (
-                <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 shadow-lg">
+                <div className="bg-green-500 text-white px-5 py-2.5 rounded-full text-sm flex items-center gap-2 shadow-lg">
                   <Check className="h-4 w-4" />
                   Saved to Comparisons
                   <button
                     onClick={() => router.push('/dashboard/comparisons')}
-                    className="ml-2 underline hover:no-underline"
+                    className="ml-2 underline hover:no-underline font-medium"
                   >
                     View All
                   </button>
