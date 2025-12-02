@@ -71,31 +71,84 @@ export default function LandingPage() {
       '-=0.4'
     );
 
-    // Floating background orbs animation
-    gsap.to('.hero-orb-1', {
-      y: -30,
-      x: 20,
+    // Animate left college cards with stagger
+    gsap.fromTo('.college-card-left-0',
+      { x: -100, opacity: 0, rotate: -10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.2 }
+    );
+    gsap.fromTo('.college-card-left-1',
+      { x: -100, opacity: 0, rotate: -10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.4 }
+    );
+    gsap.fromTo('.college-card-left-2',
+      { x: -100, opacity: 0, rotate: -10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.6 }
+    );
+
+    // Animate right college cards with stagger
+    gsap.fromTo('.college-card-right-0',
+      { x: 100, opacity: 0, rotate: 10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.3 }
+    );
+    gsap.fromTo('.college-card-right-1',
+      { x: 100, opacity: 0, rotate: 10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.5 }
+    );
+    gsap.fromTo('.college-card-right-2',
+      { x: 100, opacity: 0, rotate: 10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.7 }
+    );
+
+    // Floating animation for left cards
+    gsap.to('.college-card-left-0', {
+      y: -15,
+      duration: 3,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0
+    });
+    gsap.to('.college-card-left-1', {
+      y: -12,
+      duration: 3.5,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0.5
+    });
+    gsap.to('.college-card-left-2', {
+      y: -18,
       duration: 4,
       ease: 'sine.inOut',
       repeat: -1,
-      yoyo: true
+      yoyo: true,
+      delay: 1
     });
 
-    gsap.to('.hero-orb-2', {
-      y: 25,
-      x: -15,
-      duration: 5,
+    // Floating animation for right cards
+    gsap.to('.college-card-right-0', {
+      y: -12,
+      duration: 3.2,
       ease: 'sine.inOut',
       repeat: -1,
-      yoyo: true
+      yoyo: true,
+      delay: 0.3
     });
-
-    gsap.to('.hero-orb-3', {
-      scale: 1.1,
-      duration: 6,
+    gsap.to('.college-card-right-1', {
+      y: -16,
+      duration: 3.8,
       ease: 'sine.inOut',
       repeat: -1,
-      yoyo: true
+      yoyo: true,
+      delay: 0.8
+    });
+    gsap.to('.college-card-right-2', {
+      y: -14,
+      duration: 3.5,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0.5
     });
 
   }, { scope: heroRef });
@@ -393,31 +446,25 @@ export default function LandingPage() {
             <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-white" />
             </div>
-            <span className={scrolled ? 'text-foreground' : 'text-white'}>StudyAbroadAI</span>
+            <span className="text-foreground">StudyAbroadAI</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
             <a
               href="#features"
-              className={`font-medium transition-colors animated-underline ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/80 hover:text-white'
-              }`}
+              className="font-medium transition-colors animated-underline text-muted-foreground hover:text-foreground"
             >
               Features
             </a>
             <a
               href="#how-it-works"
-              className={`font-medium transition-colors animated-underline ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/80 hover:text-white'
-              }`}
+              className="font-medium transition-colors animated-underline text-muted-foreground hover:text-foreground"
             >
               How It Works
             </a>
             <Link
               href="/about"
-              className={`font-medium transition-colors animated-underline ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/80 hover:text-white'
-              }`}
+              className="font-medium transition-colors animated-underline text-muted-foreground hover:text-foreground"
             >
               About
             </Link>
@@ -426,11 +473,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className={`hidden sm:block font-medium px-4 py-2 rounded-lg transition-colors ${
-                scrolled
-                  ? 'text-foreground hover:bg-accent'
-                  : 'text-white hover:bg-white/10'
-              }`}
+              className="hidden sm:block font-medium px-4 py-2 rounded-lg transition-colors text-foreground hover:bg-accent"
             >
               Sign In
             </Link>
@@ -445,67 +488,110 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center gradient-primary overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="hero-orb-1 absolute top-1/4 -left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-          <div className="hero-orb-2 absolute bottom-1/4 -right-20 w-96 h-96 bg-[#0984e3]/20 rounded-full blur-3xl" />
-          <div className="hero-orb-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-3xl" />
-        </div>
-
+      {/* Hero Section - Three Column Layout */}
+      <section ref={heroRef} className="relative min-h-screen flex items-center bg-background overflow-hidden">
         <div className="container-lg relative z-10 pt-32 pb-20">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm mb-8 opacity-0">
-              <Sparkles className="h-4 w-4" />
-              <span>AI-Powered Study Abroad Guidance</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center min-h-[70vh]">
+
+            {/* Left Column - Rotating College Images */}
+            <div className="hidden lg:flex flex-col gap-6 items-center justify-center">
+              <div className="college-carousel-left space-y-6">
+                {[
+                  { name: 'MIT', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/2560px-MIT_logo.svg.png', bg: 'bg-white' },
+                  { name: 'Stanford', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Seal_of_Leland_Stanford_Junior_University.svg/1200px-Seal_of_Leland_Stanford_Junior_University.svg.png', bg: 'bg-white' },
+                  { name: 'Harvard', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Harvard_University_coat_of_arms.svg/1200px-Harvard_University_coat_of_arms.svg.png', bg: 'bg-white' },
+                ].map((college, i) => (
+                  <div
+                    key={i}
+                    className={`college-card-left-${i} relative w-48 h-48 rounded-2xl ${college.bg} shadow-xl border border-gray-200 p-6 flex flex-col items-center justify-center transform transition-all duration-500 hover:scale-105 hover:shadow-2xl`}
+                  >
+                    <img
+                      src={college.image}
+                      alt={college.name}
+                      className="w-24 h-24 object-contain mb-3"
+                    />
+                    <span className="text-gray-800 font-semibold text-lg">{college.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight mb-6 opacity-0">
-              Your Journey to{' '}
-              <span className="relative inline-block">
-                Global Education
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
-                  <path d="M2 10C50 4 150 4 298 10" stroke="rgba(255,255,255,0.5)" strokeWidth="3" strokeLinecap="round"/>
-                </svg>
-              </span>{' '}
-              Starts Here
-            </h1>
+            {/* Center Column - Main Content */}
+            <div className="flex flex-col items-center justify-center text-center px-4">
+              <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20 text-primary text-sm mb-8 opacity-0">
+                <Sparkles className="h-4 w-4" />
+                <span>AI-Powered Study Abroad Guidance</span>
+              </div>
 
-            <p className="hero-subtitle text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto opacity-0">
-              Get personalized university recommendations, application guidance, and visa support - all powered by AI and designed for Indian students.
-            </p>
+              <h1 className="hero-title text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight mb-6 opacity-0">
+                Your Journey to{' '}
+                <span className="relative inline-block text-primary">
+                  Global Education
+                  <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
+                    <path d="M2 10C50 4 150 4 298 10" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" strokeLinecap="round"/>
+                  </svg>
+                </span>{' '}
+                <br />Starts Here
+              </h1>
 
-            <div className="hero-buttons flex flex-col sm:flex-row gap-4 justify-center opacity-0">
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center gap-2 bg-white text-primary font-semibold py-4 px-8 rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 hover:scale-105"
-              >
-                Start Free Consultation
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <a
-                href="#how-it-works"
-                className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/30 text-white font-semibold py-4 px-8 rounded-xl hover:bg-white/20 transition-all"
-              >
-                See How It Works
-                <ChevronDown className="h-5 w-5" />
-              </a>
+              <p className="hero-subtitle text-lg sm:text-xl text-muted-foreground mb-10 max-w-lg mx-auto opacity-0">
+                Get personalized university recommendations, application guidance, and visa support - all powered by AI.
+              </p>
+
+              <div className="hero-buttons flex flex-col sm:flex-row gap-4 justify-center opacity-0">
+                <Link
+                  href="/signup"
+                  className="btn-primary flex items-center justify-center gap-2"
+                >
+                  Start Free Consultation
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <a
+                  href="#how-it-works"
+                  className="btn-secondary flex items-center justify-center gap-2"
+                >
+                  See How It Works
+                  <ChevronDown className="h-5 w-5" />
+                </a>
+              </div>
+
+              {/* Trust badges */}
+              <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-muted-foreground text-sm">
+                <div className="hero-trust flex items-center gap-2 opacity-0">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <span>Free to Start</span>
+                </div>
+                <div className="hero-trust flex items-center gap-2 opacity-0">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <span>No Credit Card</span>
+                </div>
+                <div className="hero-trust flex items-center gap-2 opacity-0">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <span>AI-Powered</span>
+                </div>
+              </div>
             </div>
 
-            {/* Trust badges */}
-            <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-white/60 text-sm">
-              <div className="hero-trust flex items-center gap-2 opacity-0">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                <span>Free to Start</span>
-              </div>
-              <div className="hero-trust flex items-center gap-2 opacity-0">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                <span>No Credit Card Required</span>
-              </div>
-              <div className="hero-trust flex items-center gap-2 opacity-0">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                <span>AI-Powered Recommendations</span>
+            {/* Right Column - Rotating College Images */}
+            <div className="hidden lg:flex flex-col gap-6 items-center justify-center">
+              <div className="college-carousel-right space-y-6">
+                {[
+                  { name: 'Oxford', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Oxford-University-Circlet.svg/1200px-Oxford-University-Circlet.svg.png', bg: 'bg-white' },
+                  { name: 'Cambridge', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Coat_of_Arms_of_the_University_of_Cambridge.svg/1200px-Coat_of_Arms_of_the_University_of_Cambridge.svg.png', bg: 'bg-white' },
+                  { name: 'Yale', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Yale_University_logo.svg/2560px-Yale_University_logo.svg.png', bg: 'bg-white' },
+                ].map((college, i) => (
+                  <div
+                    key={i}
+                    className={`college-card-right-${i} relative w-48 h-48 rounded-2xl ${college.bg} shadow-xl border border-gray-200 p-6 flex flex-col items-center justify-center transform transition-all duration-500 hover:scale-105 hover:shadow-2xl`}
+                  >
+                    <img
+                      src={college.image}
+                      alt={college.name}
+                      className="w-24 h-24 object-contain mb-3"
+                    />
+                    <span className="text-gray-800 font-semibold text-lg">{college.name}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -513,7 +599,7 @@ export default function LandingPage() {
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <ChevronDown className="h-8 w-8 text-white/50" />
+          <ChevronDown className="h-8 w-8 text-primary/50" />
         </div>
       </section>
 
