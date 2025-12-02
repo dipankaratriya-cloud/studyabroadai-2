@@ -22,27 +22,9 @@ import {
   Target
 } from 'lucide-react';
 
-// College data for rotating carousel
-const allColleges = [
-  { name: 'MIT', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/2560px-MIT_logo.svg.png' },
-  { name: 'Stanford', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Seal_of_Leland_Stanford_Junior_University.svg/1200px-Seal_of_Leland_Stanford_Junior_University.svg.png' },
-  { name: 'Harvard', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Harvard_University_coat_of_arms.svg/1200px-Harvard_University_coat_of_arms.svg.png' },
-  { name: 'Oxford', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Oxford-University-Circlet.svg/1200px-Oxford-University-Circlet.svg.png' },
-  { name: 'Cambridge', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Coat_of_Arms_of_the_University_of_Cambridge.svg/1200px-Coat_of_Arms_of_the_University_of_Cambridge.svg.png' },
-  { name: 'Yale', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Yale_University_logo.svg/2560px-Yale_University_logo.svg.png' },
-  { name: 'Princeton', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Princeton_seal.svg/1200px-Princeton_seal.svg.png' },
-  { name: 'Columbia', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Columbia_University_seal.svg/1200px-Columbia_University_seal.svg.png' },
-  { name: 'Berkeley', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Seal_of_University_of_California%2C_Berkeley.svg/1200px-Seal_of_University_of_California%2C_Berkeley.svg.png' },
-  { name: 'Caltech', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Seal_of_the_California_Institute_of_Technology.svg/1200px-Seal_of_the_California_Institute_of_Technology.svg.png' },
-  { name: 'ETH Zurich', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/ETH_Z%C3%BCrich_Logo_black.svg/2560px-ETH_Z%C3%BCrich_Logo_black.svg.png' },
-  { name: 'Imperial', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Imperial_College_London_crest.svg/1200px-Imperial_College_London_crest.svg.png' },
-];
-
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
-  const [leftIndex, setLeftIndex] = useState(0);
-  const [rightIndex, setRightIndex] = useState(3);
 
   // Refs for GSAP animations
   const heroRef = useRef<HTMLElement>(null);
@@ -51,25 +33,6 @@ export default function LandingPage() {
   const featuresRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
   const faqRef = useRef<HTMLElement>(null);
-  const leftCarouselRef = useRef<HTMLDivElement>(null);
-  const rightCarouselRef = useRef<HTMLDivElement>(null);
-
-  // Get visible colleges for each side
-  const getLeftColleges = () => {
-    const colleges = [];
-    for (let i = 0; i < 3; i++) {
-      colleges.push(allColleges[(leftIndex + i) % allColleges.length]);
-    }
-    return colleges;
-  };
-
-  const getRightColleges = () => {
-    const colleges = [];
-    for (let i = 0; i < 3; i++) {
-      colleges.push(allColleges[(rightIndex + i) % allColleges.length]);
-    }
-    return colleges;
-  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -78,108 +41,6 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Floating animation for all cards
-  useEffect(() => {
-    const floatCards = () => {
-      if (leftCarouselRef.current) {
-        const leftCards = leftCarouselRef.current.querySelectorAll('.college-card-left');
-        leftCards.forEach((card, i) => {
-          gsap.to(card, {
-            y: -12 + (i * 3),
-            duration: 2 + (i * 0.3),
-            ease: 'sine.inOut',
-            repeat: -1,
-            yoyo: true,
-            delay: i * 0.4
-          });
-        });
-      }
-      if (rightCarouselRef.current) {
-        const rightCards = rightCarouselRef.current.querySelectorAll('.college-card-right');
-        rightCards.forEach((card, i) => {
-          gsap.to(card, {
-            y: -10 + (i * 2),
-            duration: 2.2 + (i * 0.25),
-            ease: 'sine.inOut',
-            repeat: -1,
-            yoyo: true,
-            delay: i * 0.5
-          });
-        });
-      }
-    };
-
-    // Start floating after a short delay
-    const timer = setTimeout(floatCards, 500);
-    return () => clearTimeout(timer);
-  }, [leftIndex, rightIndex]);
-
-  // Rotate colleges every 10 seconds with slower animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Animate out and update left side
-      if (leftCarouselRef.current) {
-        const cards = leftCarouselRef.current.querySelectorAll('.college-card-left');
-        gsap.to(cards[0], {
-          x: -120,
-          opacity: 0,
-          scale: 0.7,
-          rotation: -10,
-          duration: 1.2,
-          ease: 'power2.inOut',
-          onComplete: () => {
-            setLeftIndex(prev => (prev + 1) % allColleges.length);
-          }
-        });
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Rotate right colleges with offset timing
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (rightCarouselRef.current) {
-        const cards = rightCarouselRef.current.querySelectorAll('.college-card-right');
-        gsap.to(cards[0], {
-          x: 120,
-          opacity: 0,
-          scale: 0.7,
-          rotation: 10,
-          duration: 1.2,
-          ease: 'power2.inOut',
-          onComplete: () => {
-            setRightIndex(prev => (prev + 1) % allColleges.length);
-          }
-        });
-      }
-    }, 12000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Animate new cards when they appear
-  useEffect(() => {
-    if (leftCarouselRef.current) {
-      const cards = leftCarouselRef.current.querySelectorAll('.college-card-left');
-      gsap.fromTo(cards[cards.length - 1],
-        { x: -80, opacity: 0, scale: 0.7, rotation: -5 },
-        { x: 0, opacity: 1, scale: 1, rotation: 0, duration: 1, ease: 'back.out(1.4)' }
-      );
-    }
-  }, [leftIndex]);
-
-  useEffect(() => {
-    if (rightCarouselRef.current) {
-      const cards = rightCarouselRef.current.querySelectorAll('.college-card-right');
-      gsap.fromTo(cards[cards.length - 1],
-        { x: 80, opacity: 0, scale: 0.7, rotation: 5 },
-        { x: 0, opacity: 1, scale: 1, rotation: 0, duration: 1, ease: 'back.out(1.4)' }
-      );
-    }
-  }, [rightIndex]);
 
   // Hero animations
   useGSAP(() => {
@@ -210,15 +71,85 @@ export default function LandingPage() {
       '-=0.4'
     );
 
-    // Initial animation for college carousels
-    gsap.fromTo('.college-carousel-left',
-      { x: -100, opacity: 0 },
-      { x: 0, opacity: 1, duration: 1, ease: 'power3.out', delay: 0.3 }
+    // Animate left college cards with stagger
+    gsap.fromTo('.college-card-left-0',
+      { x: -100, opacity: 0, rotate: -10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.2 }
     );
-    gsap.fromTo('.college-carousel-right',
-      { x: 100, opacity: 0 },
-      { x: 0, opacity: 1, duration: 1, ease: 'power3.out', delay: 0.3 }
+    gsap.fromTo('.college-card-left-1',
+      { x: -100, opacity: 0, rotate: -10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.4 }
     );
+    gsap.fromTo('.college-card-left-2',
+      { x: -100, opacity: 0, rotate: -10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.6 }
+    );
+
+    // Animate right college cards with stagger
+    gsap.fromTo('.college-card-right-0',
+      { x: 100, opacity: 0, rotate: 10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.3 }
+    );
+    gsap.fromTo('.college-card-right-1',
+      { x: 100, opacity: 0, rotate: 10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.5 }
+    );
+    gsap.fromTo('.college-card-right-2',
+      { x: 100, opacity: 0, rotate: 10 },
+      { x: 0, opacity: 1, rotate: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.7 }
+    );
+
+    // Floating animation for left cards
+    gsap.to('.college-card-left-0', {
+      y: -15,
+      duration: 3,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0
+    });
+    gsap.to('.college-card-left-1', {
+      y: -12,
+      duration: 3.5,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0.5
+    });
+    gsap.to('.college-card-left-2', {
+      y: -18,
+      duration: 4,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 1
+    });
+
+    // Floating animation for right cards
+    gsap.to('.college-card-right-0', {
+      y: -12,
+      duration: 3.2,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0.3
+    });
+    gsap.to('.college-card-right-1', {
+      y: -16,
+      duration: 3.8,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0.8
+    });
+    gsap.to('.college-card-right-2', {
+      y: -14,
+      duration: 3.5,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 0.5
+    });
 
   }, { scope: heroRef });
 
@@ -564,11 +495,15 @@ export default function LandingPage() {
 
             {/* Left Column - Rotating College Images */}
             <div className="hidden lg:flex flex-col gap-6 items-center justify-center">
-              <div ref={leftCarouselRef} className="college-carousel-left space-y-6">
-                {getLeftColleges().map((college, i) => (
+              <div className="college-carousel-left space-y-6">
+                {[
+                  { name: 'MIT', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/2560px-MIT_logo.svg.png', bg: 'bg-white' },
+                  { name: 'Stanford', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Seal_of_Leland_Stanford_Junior_University.svg/1200px-Seal_of_Leland_Stanford_Junior_University.svg.png', bg: 'bg-white' },
+                  { name: 'Harvard', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Harvard_University_coat_of_arms.svg/1200px-Harvard_University_coat_of_arms.svg.png', bg: 'bg-white' },
+                ].map((college, i) => (
                   <div
-                    key={`${college.name}-${leftIndex}-${i}`}
-                    className="college-card-left relative w-48 h-48 rounded-2xl bg-white shadow-xl border border-gray-200 p-6 flex flex-col items-center justify-center transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                    key={i}
+                    className={`college-card-left-${i} relative w-48 h-48 rounded-2xl ${college.bg} shadow-xl border border-gray-200 p-6 flex flex-col items-center justify-center transform transition-all duration-500 hover:scale-105 hover:shadow-2xl`}
                   >
                     <img
                       src={college.image}
@@ -639,11 +574,15 @@ export default function LandingPage() {
 
             {/* Right Column - Rotating College Images */}
             <div className="hidden lg:flex flex-col gap-6 items-center justify-center">
-              <div ref={rightCarouselRef} className="college-carousel-right space-y-6">
-                {getRightColleges().map((college, i) => (
+              <div className="college-carousel-right space-y-6">
+                {[
+                  { name: 'Oxford', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Oxford-University-Circlet.svg/1200px-Oxford-University-Circlet.svg.png', bg: 'bg-white' },
+                  { name: 'Cambridge', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Coat_of_Arms_of_the_University_of_Cambridge.svg/1200px-Coat_of_Arms_of_the_University_of_Cambridge.svg.png', bg: 'bg-white' },
+                  { name: 'Yale', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Yale_University_logo.svg/2560px-Yale_University_logo.svg.png', bg: 'bg-white' },
+                ].map((college, i) => (
                   <div
-                    key={`${college.name}-${rightIndex}-${i}`}
-                    className="college-card-right relative w-48 h-48 rounded-2xl bg-white shadow-xl border border-gray-200 p-6 flex flex-col items-center justify-center transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                    key={i}
+                    className={`college-card-right-${i} relative w-48 h-48 rounded-2xl ${college.bg} shadow-xl border border-gray-200 p-6 flex flex-col items-center justify-center transform transition-all duration-500 hover:scale-105 hover:shadow-2xl`}
                   >
                     <img
                       src={college.image}
