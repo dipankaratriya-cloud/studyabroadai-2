@@ -5,7 +5,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function streamChatCompletion(messages: ChatCompletionMessageParam[], systemPrompt: string) {
   return await groq.chat.completions.create({
-    model: 'groq/compound-mini',
+    model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'system', content: systemPrompt }, ...messages],
     stream: true,
     temperature: 0.7,
@@ -75,6 +75,86 @@ export async function generateChatTitle(messages: Array<{ role: string; content:
       return firstUserMsg.content.slice(0, 50) + (firstUserMsg.content.length > 50 ? '...' : '');
     }
     return 'Study Abroad Chat';
+  }
+}
+
+export async function extractStudentProfile(messages: Array<{ role: string; content: string }>): Promise<Record<string, any> | null> {
+  try {
+    // Only extract if there are enough messages
+    if (messages.length < 2) {
+      return null;
+    }
+
+    const conversationText = messages
+      .map(m => `${m.role}: ${m.content}`)
+      .join('\n')
+      .slice(-4000); // Limit context size
+
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        {
+          role: 'system',
+          content: `Extract student profile information from this conversation. Return ONLY a valid JSON object with the following structure (include only fields that were explicitly mentioned by the user):
+
+{
+  "education_level": "Class 12" | "Undergrad" | "Masters" | "PhD" | "Working Professional",
+  "current_grade": "percentage or GPA mentioned",
+  "field_of_interest": "subject/field they want to study",
+  "budget_min": number (annual budget minimum in USD),
+  "budget_max": number (annual budget maximum in USD),
+  "budget_currency": "USD" | "EUR" | "INR",
+  "preferred_countries": ["array", "of", "countries"],
+  "test_scores": {
+    "ielts": number,
+    "toefl": number,
+    "sat": number,
+    "gre": number
+  },
+  "timeline": "target intake like Fall 2025",
+  "goals": {
+    "degree_type": "Bachelors" | "Masters" | "PhD",
+    "research_focused": boolean,
+    "immigration_intent": boolean,
+    "scholarship_needed": boolean
+  }
+}
+
+IMPORTANT:
+- Return ONLY the JSON object, no markdown, no explanation
+- Only include fields that the user has explicitly mentioned
+- If a field wasn't mentioned, don't include it
+- Return {} if no profile info was shared`
+        },
+        {
+          role: 'user',
+          content: conversationText
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 500,
+    });
+
+    const content = response.choices[0]?.message?.content?.trim();
+    if (!content) return null;
+
+    // Try to parse the JSON
+    try {
+      // Remove any markdown code blocks if present
+      const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
+      const profile = JSON.parse(jsonStr);
+
+      // Return null if empty object
+      if (Object.keys(profile).length === 0) return null;
+
+      return profile;
+    } catch (parseError) {
+      console.error('Error parsing profile JSON:', parseError);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error extracting profile:', error);
+    return null;
   }
 }
 

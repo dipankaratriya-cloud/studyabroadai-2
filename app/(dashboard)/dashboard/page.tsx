@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useGSAP } from '@gsap/react';
+import { gsap } from '@/lib/gsap';
 import {
   MessageSquare,
   GitCompare,
@@ -14,7 +15,12 @@ import {
   ArrowRight,
   Sparkles,
   GraduationCap,
-  Clock
+  Clock,
+  TrendingUp,
+  Target,
+  Loader2,
+  ChevronRight,
+  Zap
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -35,10 +41,110 @@ export default function DashboardPage() {
   });
   const [userName, setUserName] = useState('');
 
+  // Refs for GSAP animations
+  const containerRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     fetchDashboardData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // GSAP animations after loading
+  useGSAP(() => {
+    if (loading) return;
+
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    // Hero section animation
+    tl.fromTo('.dashboard-badge',
+      { y: 20, opacity: 0, scale: 0.9 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.6 }
+    )
+    .fromTo('.dashboard-title',
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.7 },
+      '-=0.3'
+    )
+    .fromTo('.dashboard-subtitle',
+      { y: 20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.5 },
+      '-=0.4'
+    )
+    .fromTo('.dashboard-cta',
+      { y: 20, opacity: 0, scale: 0.95 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.5 },
+      '-=0.3'
+    );
+
+    // Stats cards stagger animation
+    gsap.fromTo('.stat-card-animate',
+      { y: 40, opacity: 0, scale: 0.95 },
+      {
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        duration: 0.6,
+        stagger: 0.1,
+        ease: 'back.out(1.4)',
+        delay: 0.3
+      }
+    );
+
+    // Quick actions cards
+    gsap.fromTo('.quick-action-card',
+      { y: 30, opacity: 0, x: -20 },
+      {
+        y: 0,
+        opacity: 1,
+        x: 0,
+        duration: 0.5,
+        stagger: 0.15,
+        ease: 'power2.out',
+        delay: 0.5
+      }
+    );
+
+    // Recent conversations section
+    gsap.fromTo('.recent-section',
+      { y: 40, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.6,
+        delay: 0.7
+      }
+    );
+
+    // Chat items stagger
+    gsap.fromTo('.chat-item',
+      { x: -30, opacity: 0 },
+      {
+        x: 0,
+        opacity: 1,
+        duration: 0.4,
+        stagger: 0.08,
+        ease: 'power2.out',
+        delay: 0.9
+      }
+    );
+
+    // Tips section
+    gsap.fromTo('.tip-card',
+      { y: 30, opacity: 0, rotateY: 10 },
+      {
+        y: 0,
+        opacity: 1,
+        rotateY: 0,
+        duration: 0.5,
+        stagger: 0.1,
+        ease: 'power2.out',
+        delay: 1.1
+      }
+    );
+
+  }, { scope: containerRef, dependencies: [loading] });
 
   const fetchDashboardData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -49,15 +155,13 @@ export default function DashboardPage() {
 
     setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student');
 
-    // Fetch chat sessions
     const { data: chats, count: chatCount } = await supabase
       .from('chat_sessions')
       .select('id, title, updated_at', { count: 'exact' })
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
-      .limit(3);
+      .limit(5);
 
-    // Fetch comparisons count
     const { count: comparisonCount } = await supabase
       .from('saved_comparisons')
       .select('*', { count: 'exact', head: true })
@@ -88,170 +192,236 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <span>Welcome back, {userName}!</span>
-          <Sparkles className="h-8 w-8 text-yellow-500" />
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Ready to explore your study abroad options? Let&apos;s find your perfect university.
-        </p>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center">
-              <div className="p-4 bg-primary/10 rounded-full mb-4">
-                <Plus className="h-8 w-8 text-primary" />
+    <div ref={containerRef} className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <div ref={heroRef} className="relative overflow-hidden border-b bg-card">
+        <div className="absolute inset-0 gradient-mesh opacity-50" />
+        <div className="relative px-8 py-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="dashboard-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 opacity-0">
+                  <Sparkles className="h-4 w-4" />
+                  Welcome back
+                </div>
+                <h1 className="dashboard-title text-4xl font-bold mb-3 opacity-0">
+                  Hello, {userName}!
+                </h1>
+                <p className="dashboard-subtitle text-lg text-muted-foreground max-w-xl opacity-0">
+                  Continue exploring universities or start a new conversation with your AI advisor.
+                </p>
               </div>
-              <h3 className="text-lg font-semibold mb-2">Start New Chat</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Get personalized university recommendations
-              </p>
-              <Button onClick={createNewChat} disabled={creating} className="w-full">
-                {creating ? 'Creating...' : 'New Conversation'}
+              <Button
+                onClick={createNewChat}
+                disabled={creating}
+                size="lg"
+                className="dashboard-cta btn-primary h-12 px-6 hidden md:flex opacity-0"
+              >
+                {creating ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <Plus className="h-5 w-5 mr-2" />
+                )}
+                New Conversation
               </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center">
-              <div className="p-4 bg-blue-500/10 rounded-full mb-4">
-                <GitCompare className="h-8 w-8 text-blue-500" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">My Comparisons</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {stats.totalComparisons} saved comparison{stats.totalComparisons !== 1 ? 's' : ''}
-              </p>
-              <Link href="/dashboard/comparisons" className="w-full">
-                <Button variant="outline" className="w-full">
-                  View Comparisons
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center">
-              <div className="p-4 bg-green-500/10 rounded-full mb-4">
-                <User className="h-8 w-8 text-green-500" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">My Profile</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Manage your preferences
-              </p>
-              <Link href="/dashboard/profile" className="w-full">
-                <Button variant="outline" className="w-full">
-                  View Profile
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Total Conversations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-primary">{stats.totalChats}</div>
-            <p className="text-sm text-muted-foreground">
-              chat session{stats.totalChats !== 1 ? 's' : ''} with AI advisor
-            </p>
-          </CardContent>
-        </Card>
+      <div ref={contentRef} className="px-8 py-10">
+        <div className="max-w-6xl mx-auto space-y-10">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Conversations Card */}
+            <div className="stat-card-animate stat-card group cursor-pointer hover:border-primary/20 transition-all duration-300 opacity-0">
+              <div className="flex items-start justify-between mb-4">
+                <div className="icon-box icon-box-lg gradient-primary-subtle">
+                  <MessageSquare className="h-6 w-6 text-primary" />
+                </div>
+                <TrendingUp className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div className="text-4xl font-bold mb-1">{stats.totalChats}</div>
+              <p className="text-muted-foreground">Total Conversations</p>
+            </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-blue-500" />
-              Saved Comparisons
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-blue-500">{stats.totalComparisons}</div>
-            <p className="text-sm text-muted-foreground">
-              university comparison{stats.totalComparisons !== 1 ? 's' : ''} saved
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            {/* Comparisons Card */}
+            <div className="stat-card-animate stat-card group cursor-pointer hover:border-primary/20 transition-all duration-300 opacity-0">
+              <div className="flex items-start justify-between mb-4">
+                <div className="icon-box icon-box-lg bg-primary/10">
+                  <GitCompare className="h-6 w-6 text-primary" />
+                </div>
+                <Target className="h-5 w-5 text-primary" />
+              </div>
+              <div className="text-4xl font-bold mb-1">{stats.totalComparisons}</div>
+              <p className="text-muted-foreground">Saved Comparisons</p>
+            </div>
 
-      {/* Recent Chats */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Recent Conversations
-            </CardTitle>
-            <Link href="/dashboard/chats">
-              <Button variant="ghost" size="sm">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+            {/* Quick Start Card */}
+            <div
+              onClick={createNewChat}
+              className="stat-card-animate stat-card group cursor-pointer hover:border-primary/30 hover:shadow-lg transition-all duration-300 gradient-primary-subtle opacity-0"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="icon-box icon-box-lg gradient-primary">
+                  <Zap className="h-6 w-6 text-white" />
+                </div>
+                <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-1 transition-transform" />
+              </div>
+              <div className="text-xl font-bold mb-1">Quick Start</div>
+              <p className="text-muted-foreground">Start a new AI conversation</p>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link href="/dashboard/comparisons" className="block">
+              <div className="quick-action-card card-elevated p-6 group hover:border-primary/20 transition-all duration-300 opacity-0">
+                <div className="flex items-center gap-5">
+                  <div className="icon-box icon-box-lg bg-primary/10 group-hover:scale-110 transition-transform">
+                    <GitCompare className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-1">View Comparisons</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {stats.totalComparisons} saved comparison{stats.totalComparisons !== 1 ? 's' : ''} to review
+                    </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/profile" className="block">
+              <div className="quick-action-card card-elevated p-6 group hover:border-emerald-500/20 transition-all duration-300 opacity-0">
+                <div className="flex items-center gap-5">
+                  <div className="icon-box icon-box-lg bg-emerald-500/10 group-hover:scale-110 transition-transform">
+                    <User className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-1">Your Profile</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Manage your preferences and settings
+                    </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                </div>
+              </div>
             </Link>
           </div>
-        </CardHeader>
-        <CardContent>
-          {stats.recentChats.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recentChats.map((chat) => (
-                <Link key={chat.id} href={`/dashboard/chats/${chat.id}`}>
-                  <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded">
-                        <MessageSquare className="h-4 w-4 text-primary" />
+
+          {/* Recent Conversations */}
+          <div className="recent-section card-elevated overflow-hidden opacity-0">
+            <div className="p-6 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="icon-box icon-box-md gradient-primary-subtle">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold">Recent Conversations</h2>
+                  <p className="text-sm text-muted-foreground">Continue where you left off</p>
+                </div>
+              </div>
+              <Link href="/dashboard/chats">
+                <Button variant="ghost" className="gap-2">
+                  View All
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="divide-y">
+              {stats.recentChats.length > 0 ? (
+                stats.recentChats.map((chat, index) => (
+                  <Link key={chat.id} href={`/dashboard/chats/${chat.id}`}>
+                    <div className="chat-item p-5 flex items-center gap-4 hover:bg-accent/50 transition-colors group opacity-0">
+                      <div className="icon-box icon-box-md bg-primary/10 group-hover:bg-primary/15 transition-colors">
+                        <MessageSquare className="h-5 w-5 text-primary" />
                       </div>
-                      <div>
-                        <p className="font-medium">{chat.title || 'Untitled Conversation'}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate group-hover:text-primary transition-colors">
+                          {chat.title || 'Untitled Conversation'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
                           {new Date(chat.updated_at).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
+                            year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
                         </p>
                       </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                ))
+              ) : (
+                <div className="p-12 text-center">
+                  <div className="icon-box icon-box-lg gradient-primary-subtle mx-auto mb-4">
+                    <MessageSquare className="h-7 w-7 text-primary" />
                   </div>
-                </Link>
-              ))}
+                  <h3 className="text-lg font-semibold mb-2">No conversations yet</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                    Start your first conversation with Aanya, your AI study abroad advisor.
+                  </p>
+                  <Button onClick={createNewChat} disabled={creating} className="btn-primary">
+                    {creating ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      <Plus className="h-5 w-5 mr-2" />
+                    )}
+                    Start First Conversation
+                  </Button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground mb-4">No conversations yet</p>
-              <Button onClick={createNewChat} disabled={creating}>
-                <Plus className="h-4 w-4 mr-2" />
-                Start Your First Chat
-              </Button>
+          </div>
+
+          {/* Tips Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="tip-card p-6 rounded-2xl border bg-gradient-to-br from-primary/5 to-transparent opacity-0">
+              <div className="icon-box icon-box-md bg-primary/10 mb-4">
+                <GraduationCap className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Get Recommendations</h3>
+              <p className="text-sm text-muted-foreground">
+                Tell Aanya about your goals and get personalized university suggestions.
+              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            <div className="tip-card p-6 rounded-2xl border bg-gradient-to-br from-primary/5 to-transparent opacity-0">
+              <div className="icon-box icon-box-md bg-primary/10 mb-4">
+                <GitCompare className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Compare Universities</h3>
+              <p className="text-sm text-muted-foreground">
+                Select up to 3 universities to compare side by side.
+              </p>
+            </div>
+
+            <div className="tip-card p-6 rounded-2xl border bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0">
+              <div className="icon-box icon-box-md bg-emerald-500/10 mb-4">
+                <Target className="h-5 w-5 text-emerald-500" />
+              </div>
+              <h3 className="font-semibold mb-2">Track Progress</h3>
+              <p className="text-sm text-muted-foreground">
+                Save your favorite universities and track your application journey.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

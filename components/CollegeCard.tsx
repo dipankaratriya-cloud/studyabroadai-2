@@ -1,9 +1,7 @@
 'use client';
 
-import { ExternalLink, MapPin, Calendar, DollarSign, Clock, GraduationCap, Award, Globe, CheckCircle, GitCompare, Check, Bookmark, BookmarkCheck } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { useState } from 'react';
+import { ExternalLink, MapPin, Calendar, DollarSign, Clock, GraduationCap, Award, Globe, CheckCircle, GitCompare, Check, Bookmark, BookmarkCheck, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CollegeRecommendation } from '@/lib/xmlParser';
 
@@ -14,170 +12,233 @@ interface CollegeCardProps {
   isSelected?: boolean;
   isSaved?: boolean;
   compareDisabled?: boolean;
+  defaultExpanded?: boolean;
 }
 
-export function CollegeCard({ college, onCompare, onSave, isSelected, isSaved, compareDisabled }: CollegeCardProps) {
+export function CollegeCard({ college, onCompare, onSave, isSelected, isSaved, compareDisabled, defaultExpanded = false }: CollegeCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
   return (
-    <Card className="w-full hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-2xl mb-2 flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-primary" />
-              {college.name}
-            </CardTitle>
-            <CardDescription className="flex items-center gap-2 text-base">
-              <MapPin className="h-4 w-4" />
-              {college.city}, {college.country}
-            </CardDescription>
+    <div className="card-elevated overflow-hidden group hover:border-primary/20 transition-all duration-300">
+      {/* Compact Header - Always Visible */}
+      <div className="p-4">
+        <div className="flex items-center gap-3">
+          {/* University Icon */}
+          <div className="icon-box icon-box-md gradient-primary flex-shrink-0">
+            <GraduationCap className="h-5 w-5 text-white" />
           </div>
-          {college.ranking && (
-            <Badge variant="secondary" className="ml-2">
-              <Award className="h-3 w-3 mr-1" />
-              {college.ranking}
-            </Badge>
+
+          {/* Main Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-base truncate group-hover:text-primary transition-colors">
+                  {college.name}
+                </h3>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <MapPin className="h-3 w-3" />
+                  {college.city}, {college.country}
+                </p>
+              </div>
+              {college.ranking && (
+                <div className="badge-primary text-xs flex-shrink-0">
+                  <Award className="h-3 w-3" />
+                  {college.ranking}
+                </div>
+              )}
+            </div>
+
+            {/* Compact Info Row */}
+            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              <span className="truncate font-medium text-foreground">{college.program}</span>
+              <span className="flex items-center gap-1 flex-shrink-0">
+                <DollarSign className="h-3 w-3" />
+                <span className="font-semibold text-primary">{college.total_cost_annual}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Expand Toggle */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
+          </button>
+        </div>
+
+        {/* Quick Action Buttons - Always Visible */}
+        <div className="flex gap-2 mt-3">
+          {onSave && (
+            <Button
+              variant={isSaved ? "secondary" : "outline"}
+              size="sm"
+              className={`h-8 px-3 rounded-lg text-xs transition-all ${
+                isSaved
+                  ? 'bg-amber-100 border-amber-300 text-amber-600 hover:bg-amber-200 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-400'
+                  : 'hover:border-amber-300 hover:text-amber-600'
+              }`}
+              onClick={() => onSave(college)}
+            >
+              {isSaved ? (
+                <BookmarkCheck className="h-3.5 w-3.5 mr-1" />
+              ) : (
+                <Bookmark className="h-3.5 w-3.5 mr-1" />
+              )}
+              {isSaved ? 'Saved' : 'Save'}
+            </Button>
           )}
+          {onCompare && (
+            <Button
+              variant={isSelected ? "secondary" : "outline"}
+              size="sm"
+              className={`h-8 px-3 rounded-lg text-xs transition-all ${
+                isSelected
+                  ? 'bg-primary/10 border-primary text-primary hover:bg-primary/20'
+                  : 'hover:border-primary/50'
+              }`}
+              onClick={() => onCompare(college)}
+              disabled={compareDisabled && !isSelected}
+            >
+              {isSelected ? (
+                <>
+                  <Check className="h-3.5 w-3.5 mr-1" />
+                  Comparing
+                </>
+              ) : (
+                <>
+                  <GitCompare className="h-3.5 w-3.5 mr-1" />
+                  Compare
+                </>
+              )}
+            </Button>
+          )}
+          <Button asChild size="sm" className="h-8 px-3 rounded-lg text-xs btn-primary ml-auto">
+            <a href={college.official_link} target="_blank" rel="noopener noreferrer">
+              Visit
+              <ExternalLink className="ml-1 h-3.5 w-3.5" />
+            </a>
+          </Button>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-4">
-        {/* Program */}
-        <div>
-          <h4 className="font-semibold text-lg mb-1">{college.program}</h4>
-          <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {college.duration}
-            </span>
-            <span className="flex items-center gap-1">
-              <Globe className="h-3 w-3" />
-              {college.language}
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {college.intake_seasons}
-            </span>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Cost Information */}
-        <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Annual Tuition:</span>
-            <span className="font-bold text-primary">{college.tuition_annual}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Living Costs:</span>
-            <span>{college.living_cost_annual}</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between items-center">
-            <span className="font-semibold">Total Annual Cost:</span>
-            <span className="font-bold text-lg">{college.total_cost_annual}</span>
-          </div>
-        </div>
-
-        {/* Requirements */}
-        <div>
-          <h5 className="font-semibold mb-2">Requirements</h5>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="text-muted-foreground">GRE:</span>{' '}
-              <Badge variant={college.gre_required === 'No' || college.gre_required === 'Optional' ? 'secondary' : 'outline'}>
-                {college.gre_required}
-              </Badge>
-            </div>
-            <div>
-              <span className="text-muted-foreground">IELTS:</span>{' '}
-              <span className="font-medium">{college.ielts_minimum}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">TOEFL:</span>{' '}
-              <span className="font-medium">{college.toefl_minimum}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Deadline:</span>{' '}
-              <span className="font-medium">{college.application_deadline}</span>
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className="border-t animate-fade-in">
+          {/* Program Info */}
+          <div className="p-4 bg-muted/30">
+            <h4 className="font-semibold text-sm mb-2">{college.program}</h4>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {college.duration}
+              </span>
+              <span className="flex items-center gap-1">
+                <Globe className="h-3.5 w-3.5" />
+                {college.language}
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                {college.intake_seasons}
+              </span>
             </div>
           </div>
-        </div>
 
-        {/* Scholarships */}
-        {college.scholarships_available && college.scholarships_available !== 'No' && (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 p-3 rounded-lg">
-            <div className="flex items-start gap-2">
-              <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-              <div>
-                <p className="font-semibold text-sm text-green-900 dark:text-green-100">Scholarships Available</p>
-                <p className="text-sm text-green-700 dark:text-green-300">{college.scholarships_available}</p>
+          {/* Cost Section */}
+          <div className="p-4">
+            <div className="bg-gradient-to-br from-primary/5 to-primary/5 border border-primary/10 rounded-xl p-4">
+              <div className="flex items-center gap-2 text-xs font-medium text-primary mb-3">
+                <DollarSign className="h-3.5 w-3.5" />
+                Annual Cost Breakdown
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Tuition Fee</span>
+                  <span className="font-medium">{college.tuition_annual}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Living Costs</span>
+                  <span className="font-medium text-muted-foreground">{college.living_cost_annual}</span>
+                </div>
+                <div className="h-px bg-border my-1" />
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total Annual</span>
+                  <span className="text-lg font-bold text-primary">{college.total_cost_annual}</span>
+                </div>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Industry Connections */}
-        {college.industry_connections && (
-          <div>
-            <h5 className="font-semibold mb-2 text-sm">Industry Connections</h5>
-            <p className="text-sm text-muted-foreground">{college.industry_connections}</p>
+          {/* Requirements */}
+          <div className="px-4 pb-4">
+            <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+              <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              Entry Requirements
+            </h5>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-xs">
+                <span className="text-muted-foreground">GRE</span>
+                <span className={`font-medium ${college.gre_required === 'No' || college.gre_required === 'Optional' ? 'text-emerald-600' : ''}`}>
+                  {college.gre_required}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-xs">
+                <span className="text-muted-foreground">IELTS</span>
+                <span className="font-medium">{college.ielts_minimum}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-xs">
+                <span className="text-muted-foreground">TOEFL</span>
+                <span className="font-medium">{college.toefl_minimum}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-xs">
+                <span className="text-muted-foreground">Deadline</span>
+                <span className="font-medium">{college.application_deadline}</span>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Why Good Fit */}
-        <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg">
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold text-sm mb-1">Why This Is A Great Fit</p>
-              <p className="text-sm">{college.why_good_fit}</p>
+          {/* Scholarships */}
+          {college.scholarships_available && college.scholarships_available !== 'No' && (
+            <div className="px-4 pb-4">
+              <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-xs text-emerald-700 dark:text-emerald-400">Scholarships Available</p>
+                    <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">{college.scholarships_available}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Industry Connections */}
+          {college.industry_connections && (
+            <div className="px-4 pb-4">
+              <h5 className="text-xs font-semibold mb-1">Industry Connections</h5>
+              <p className="text-xs text-muted-foreground">{college.industry_connections}</p>
+            </div>
+          )}
+
+          {/* Why Good Fit */}
+          <div className="px-4 pb-4">
+            <div className="bg-gradient-to-br from-primary/5 to-primary/5 border border-primary/10 p-3 rounded-xl">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-xs mb-0.5">Why This Is A Great Fit</p>
+                  <p className="text-xs text-muted-foreground">{college.why_good_fit}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </CardContent>
-
-      <CardFooter className="flex gap-2">
-        {onSave && (
-          <Button
-            variant={isSaved ? "secondary" : "outline"}
-            size="icon"
-            className={`flex-shrink-0 ${isSaved ? 'bg-amber-100 border-amber-400 text-amber-600 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-400' : ''}`}
-            onClick={() => onSave(college)}
-          >
-            {isSaved ? (
-              <BookmarkCheck className="h-4 w-4" />
-            ) : (
-              <Bookmark className="h-4 w-4" />
-            )}
-          </Button>
-        )}
-        {onCompare && (
-          <Button
-            variant={isSelected ? "secondary" : "outline"}
-            className={`flex-1 ${isSelected ? 'bg-primary/10 border-primary' : ''}`}
-            onClick={() => onCompare(college)}
-            disabled={compareDisabled && !isSelected}
-          >
-            {isSelected ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Selected
-              </>
-            ) : (
-              <>
-                <GitCompare className="mr-2 h-4 w-4" />
-                Compare
-              </>
-            )}
-          </Button>
-        )}
-        <Button asChild className="flex-1" variant="default">
-          <a href={college.official_link} target="_blank" rel="noopener noreferrer">
-            Visit Page <ExternalLink className="ml-2 h-4 w-4" />
-          </a>
-        </Button>
-      </CardFooter>
-    </Card>
+      )}
+    </div>
   );
 }

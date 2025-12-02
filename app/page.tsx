@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useGSAP } from '@gsap/react';
+import { gsap, ScrollTrigger } from '@/lib/gsap';
 import {
   GraduationCap,
   Globe,
@@ -24,6 +26,14 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
 
+  // Refs for GSAP animations
+  const heroRef = useRef<HTMLElement>(null);
+  const statsRef = useRef<HTMLElement>(null);
+  const stepsRef = useRef<HTMLElement>(null);
+  const featuresRef = useRef<HTMLElement>(null);
+  const ctaRef = useRef<HTMLElement>(null);
+  const faqRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -32,34 +42,258 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-slide-up');
-          }
-        });
-      },
-      { threshold: 0.1 }
+  // Hero animations
+  useGSAP(() => {
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    tl.fromTo('.hero-badge',
+      { y: 30, opacity: 0, scale: 0.9 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.8 }
+    )
+    .fromTo('.hero-title',
+      { y: 60, opacity: 0 },
+      { y: 0, opacity: 1, duration: 1 },
+      '-=0.4'
+    )
+    .fromTo('.hero-subtitle',
+      { y: 40, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8 },
+      '-=0.6'
+    )
+    .fromTo('.hero-buttons',
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8 },
+      '-=0.5'
+    )
+    .fromTo('.hero-trust',
+      { y: 20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.6, stagger: 0.1 },
+      '-=0.4'
     );
 
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
+    // Floating background orbs animation
+    gsap.to('.hero-orb-1', {
+      y: -30,
+      x: 20,
+      duration: 4,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true
+    });
+
+    gsap.to('.hero-orb-2', {
+      y: 25,
+      x: -15,
+      duration: 5,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true
+    });
+
+    gsap.to('.hero-orb-3', {
+      scale: 1.1,
+      duration: 6,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true
+    });
+
+  }, { scope: heroRef });
+
+  // Stats animations with counter
+  useGSAP(() => {
+    ScrollTrigger.create({
+      trigger: statsRef.current,
+      start: 'top 80%',
+      onEnter: () => {
+        gsap.fromTo('.stat-item',
+          { y: 50, opacity: 0, scale: 0.9 },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'back.out(1.7)'
+          }
+        );
+      },
+      once: true
+    });
+  }, { scope: statsRef });
+
+  // Steps section animations
+  useGSAP(() => {
+    gsap.fromTo('.steps-header',
+      { y: 40, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.steps-header',
+          start: 'top 85%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+
+    gsap.fromTo('.step-card',
+      { y: 60, opacity: 0, scale: 0.95 },
+      {
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        duration: 0.7,
+        stagger: 0.15,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.steps-grid',
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+
+    // Arrow animation
+    gsap.fromTo('.step-arrow',
+      { x: -10, opacity: 0 },
+      {
+        x: 0,
+        opacity: 1,
+        duration: 0.5,
+        stagger: 0.2,
+        delay: 0.5,
+        scrollTrigger: {
+          trigger: '.steps-grid',
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+  }, { scope: stepsRef });
+
+  // Features section animations
+  useGSAP(() => {
+    gsap.fromTo('.features-header',
+      { y: 40, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.features-header',
+          start: 'top 85%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+
+    gsap.fromTo('.feature-card',
+      { y: 80, opacity: 0, rotateX: 10 },
+      {
+        y: 0,
+        opacity: 1,
+        rotateX: 0,
+        duration: 0.8,
+        stagger: {
+          amount: 0.6,
+          grid: [2, 3],
+          from: 'start'
+        },
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.features-grid',
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+  }, { scope: featuresRef });
+
+  // CTA section animations
+  useGSAP(() => {
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: ctaRef.current,
+        start: 'top 75%',
+        toggleActions: 'play none none reverse'
+      }
+    });
+
+    tl.fromTo('.cta-content',
+      { y: 60, opacity: 0, scale: 0.95 },
+      { y: 0, opacity: 1, scale: 1, duration: 1, ease: 'power3.out' }
+    );
+
+    // Parallax orbs
+    gsap.to('.cta-orb-1', {
+      y: -50,
+      scrollTrigger: {
+        trigger: ctaRef.current,
+        start: 'top bottom',
+        end: 'bottom top',
+        scrub: 1
+      }
+    });
+
+    gsap.to('.cta-orb-2', {
+      y: 50,
+      scrollTrigger: {
+        trigger: ctaRef.current,
+        start: 'top bottom',
+        end: 'bottom top',
+        scrub: 1
+      }
+    });
+  }, { scope: ctaRef });
+
+  // FAQ section animations
+  useGSAP(() => {
+    gsap.fromTo('.faq-header',
+      { y: 40, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.faq-header',
+          start: 'top 85%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+
+    gsap.fromTo('.faq-item',
+      { y: 30, opacity: 0, x: -20 },
+      {
+        y: 0,
+        opacity: 1,
+        x: 0,
+        duration: 0.6,
+        stagger: 0.1,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.faq-list',
+          start: 'top 85%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+  }, { scope: faqRef });
 
   const features = [
     {
       icon: Target,
       title: 'AI Course Finder',
       desc: 'Get personalized university recommendations based on your profile, preferences, and career goals.',
-      color: 'from-blue-500 to-cyan-500'
+      color: 'from-[#0984e3] to-[#00b4d8]'
     },
     {
       icon: FileText,
       title: 'SOP & LOR Review',
       desc: 'AI-powered analysis to perfect your statements and recommendation letters.',
-      color: 'from-purple-500 to-pink-500'
+      color: 'from-[#0984e3] to-[#0096c7]'
     },
     {
       icon: Award,
@@ -83,7 +317,7 @@ export default function LandingPage() {
       icon: BookOpen,
       title: 'Application Tracking',
       desc: 'Monitor all your applications in one unified dashboard.',
-      color: 'from-indigo-500 to-violet-500'
+      color: 'from-[#0984e3] to-[#0077b6]'
     },
   ];
 
@@ -145,7 +379,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -212,24 +446,24 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center gradient-primary overflow-hidden">
+      <section ref={heroRef} className="relative min-h-screen flex items-center gradient-primary overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 -left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-3xl" />
+          <div className="hero-orb-1 absolute top-1/4 -left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+          <div className="hero-orb-2 absolute bottom-1/4 -right-20 w-96 h-96 bg-[#0984e3]/20 rounded-full blur-3xl" />
+          <div className="hero-orb-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-3xl" />
         </div>
 
         <div className="container-lg relative z-10 pt-32 pb-20">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm mb-8 animate-fade-in">
+            <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm mb-8 opacity-0">
               <Sparkles className="h-4 w-4" />
               <span>AI-Powered Study Abroad Guidance</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight mb-6 animate-slide-up">
+            <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight mb-6 opacity-0">
               Your Journey to{' '}
-              <span className="relative">
+              <span className="relative inline-block">
                 Global Education
                 <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
                   <path d="M2 10C50 4 150 4 298 10" stroke="rgba(255,255,255,0.5)" strokeWidth="3" strokeLinecap="round"/>
@@ -238,14 +472,14 @@ export default function LandingPage() {
               Starts Here
             </h1>
 
-            <p className="text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '100ms' }}>
+            <p className="hero-subtitle text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto opacity-0">
               Get personalized university recommendations, application guidance, and visa support - all powered by AI and designed for Indian students.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: '200ms' }}>
+            <div className="hero-buttons flex flex-col sm:flex-row gap-4 justify-center opacity-0">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center gap-2 bg-white text-primary font-semibold py-4 px-8 rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
+                className="inline-flex items-center justify-center gap-2 bg-white text-primary font-semibold py-4 px-8 rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 hover:scale-105"
               >
                 Start Free Consultation
                 <ArrowRight className="h-5 w-5" />
@@ -260,16 +494,16 @@ export default function LandingPage() {
             </div>
 
             {/* Trust badges */}
-            <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-white/60 text-sm animate-fade-in" style={{ animationDelay: '400ms' }}>
-              <div className="flex items-center gap-2">
+            <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-white/60 text-sm">
+              <div className="hero-trust flex items-center gap-2 opacity-0">
                 <CheckCircle2 className="h-5 w-5 text-green-400" />
                 <span>Free to Start</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="hero-trust flex items-center gap-2 opacity-0">
                 <CheckCircle2 className="h-5 w-5 text-green-400" />
                 <span>No Credit Card Required</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="hero-trust flex items-center gap-2 opacity-0">
                 <CheckCircle2 className="h-5 w-5 text-green-400" />
                 <span>AI-Powered Recommendations</span>
               </div>
@@ -284,11 +518,11 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-card border-b">
+      <section ref={statsRef} className="py-16 bg-card border-b">
         <div className="container-lg">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, i) => (
-              <div key={i} className="text-center reveal opacity-0">
+              <div key={i} className="stat-item text-center opacity-0">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl gradient-primary-subtle mb-4">
                   <stat.icon className="h-6 w-6 text-primary" />
                 </div>
@@ -301,9 +535,9 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="section bg-background">
+      <section ref={stepsRef} id="how-it-works" className="section bg-background">
         <div className="container-lg">
-          <div className="text-center mb-16 reveal opacity-0">
+          <div className="steps-header text-center mb-16 opacity-0">
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
               Simple Process
             </span>
@@ -315,14 +549,13 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="steps-grid grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {steps.map((step, i) => (
               <div
                 key={i}
-                className="reveal opacity-0 relative"
-                style={{ animationDelay: `${i * 100}ms` }}
+                className="step-card relative opacity-0"
               >
-                <div className="bg-card rounded-2xl p-8 h-full border card-hover">
+                <div className="bg-card rounded-2xl p-8 h-full border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
                   <div className="text-5xl font-bold text-primary/10 mb-4">{step.number}</div>
                   <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-4">
                     <step.icon className="h-6 w-6 text-white" />
@@ -331,7 +564,7 @@ export default function LandingPage() {
                   <p className="text-muted-foreground">{step.desc}</p>
                 </div>
                 {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-4 w-8 text-muted-foreground/30">
+                  <div className="step-arrow hidden lg:block absolute top-1/2 -right-4 w-8 text-muted-foreground/30 opacity-0">
                     <ArrowRight className="h-6 w-6" />
                   </div>
                 )}
@@ -342,9 +575,9 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="section bg-muted/50">
+      <section ref={featuresRef} id="features" className="section bg-muted/50">
         <div className="container-lg">
-          <div className="text-center mb-16 reveal opacity-0">
+          <div className="features-header text-center mb-16 opacity-0">
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
               Powerful Features
             </span>
@@ -356,18 +589,17 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="features-grid grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
               <div
                 key={i}
-                className="reveal opacity-0 group bg-card rounded-2xl p-8 border card-hover cursor-pointer"
-                style={{ animationDelay: `${i * 100}ms` }}
+                className="feature-card group bg-card rounded-2xl p-8 border hover:border-primary/30 hover:shadow-xl cursor-pointer transition-all duration-300 opacity-0"
                 onMouseEnter={() => setActiveFeature(i)}
               >
-                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
                   <feature.icon className="h-7 w-7 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">{feature.title}</h3>
                 <p className="text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
@@ -376,14 +608,14 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="section gradient-primary relative overflow-hidden">
+      <section ref={ctaRef} className="section gradient-primary relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
+          <div className="cta-orb-1 absolute top-0 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+          <div className="cta-orb-2 absolute bottom-0 right-1/4 w-64 h-64 bg-[#0984e3]/20 rounded-full blur-3xl" />
         </div>
 
         <div className="container-lg relative z-10 text-center">
-          <div className="max-w-3xl mx-auto reveal opacity-0">
+          <div className="cta-content max-w-3xl mx-auto opacity-0">
             <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
               Ready to Start Your Journey?
             </h2>
@@ -392,7 +624,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/signup"
-              className="inline-flex items-center gap-3 bg-white text-primary font-bold py-4 px-10 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
+              className="inline-flex items-center gap-3 bg-white text-primary font-bold py-4 px-10 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 hover:scale-105"
             >
               Get Started Free
               <ArrowRight className="h-5 w-5" />
@@ -402,9 +634,9 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="section bg-background">
+      <section ref={faqRef} className="section bg-background">
         <div className="container-lg max-w-3xl">
-          <div className="text-center mb-12 reveal opacity-0">
+          <div className="faq-header text-center mb-12 opacity-0">
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
               FAQ
             </span>
@@ -413,11 +645,11 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="space-y-4 reveal opacity-0">
+          <div className="faq-list space-y-4">
             {faqs.map((faq, i) => (
               <details
                 key={i}
-                className="group bg-card rounded-xl border overflow-hidden"
+                className="faq-item group bg-card rounded-xl border overflow-hidden hover:border-primary/30 transition-colors opacity-0"
               >
                 <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
                   <span className="font-semibold text-lg pr-4">{faq.q}</span>

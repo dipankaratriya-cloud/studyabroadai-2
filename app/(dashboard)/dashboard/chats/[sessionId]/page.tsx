@@ -7,6 +7,7 @@ import { CollegeCard } from '@/components/CollegeCard';
 import { ComparisonCard } from '@/components/ComparisonCard';
 import { Button } from '@/components/ui/button';
 import { GitCompare, X, Bookmark, MapPin, Check, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { useProfile } from '@/components/providers/ProfileContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -115,6 +116,7 @@ export default function ChatPage() {
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonSaved, setComparisonSaved] = useState(false);
   const [savingComparison, setSavingComparison] = useState(false);
+  const { setProfile: setContextProfile } = useProfile();
 
   const handleSaveToggle = useCallback((college: CollegeRecommendation) => {
     setSavedColleges(prev => {
@@ -185,14 +187,26 @@ export default function ChatPage() {
       const { session } = await res.json();
       setMessages(session?.messages || []);
       setProfile(session?.student_profile);
+      setContextProfile(session?.student_profile || null);
       setLoading(false);
     }
     loadSession();
-  }, [sessionId]);
+  }, [sessionId, setContextProfile]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-focus input on load and when streaming ends
+  useEffect(() => {
+    if (!loading && !isStreaming) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, isStreaming]);
 
   const sendMessage = async () => {
     if (!input.trim() || isStreaming) return;
@@ -209,11 +223,13 @@ export default function ChatPage() {
         body: JSON.stringify({ message: input, sessionId }),
       });
 
-      if (!response.ok || !response.body) throw new Error('Stream failed');
+      if (!response.body) throw new Error('No response body');
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let aiMessage = '';
+      let hasReceivedContent = false;
+      let errorMessage = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -229,7 +245,15 @@ export default function ChatPage() {
 
             try {
               const parsed = JSON.parse(data);
+
+              // Handle error messages from server
+              if (parsed.error) {
+                errorMessage = parsed.error;
+                continue;
+              }
+
               if (parsed.content) {
+                hasReceivedContent = true;
                 aiMessage += parsed.content;
                 setMessages(prev => {
                   const lastMsg = prev[prev.length - 1];
@@ -239,13 +263,48 @@ export default function ChatPage() {
                   return [...prev, { role: 'assistant', content: aiMessage, timestamp: new Date().toISOString() }];
                 });
               }
-            } catch {}
+            } catch {
+              // Ignore JSON parse errors for incomplete chunks
+            }
           }
         }
       }
+
+      // If we got an error but no content, show the error
+      if (errorMessage && !hasReceivedContent) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: errorMessage,
+          timestamp: new Date().toISOString()
+        }]);
+      }
+      // If no content was received at all, show a generic error
+      else if (!hasReceivedContent && !aiMessage) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: 'Sorry, I could not generate a response. Please try again.',
+          timestamp: new Date().toISOString()
+        }]);
+      }
+
+      // Refresh profile after message to get updated data
+      try {
+        const profileRes = await fetch(`/api/chat/${sessionId}`);
+        const { session } = await profileRes.json();
+        if (session?.student_profile) {
+          setProfile(session.student_profile);
+          setContextProfile(session.student_profile);
+        }
+      } catch {
+        // Ignore profile fetch errors
+      }
     } catch (error) {
       console.error('Error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, an error occurred. Please try again.', timestamp: new Date().toISOString() }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, a connection error occurred. Please check your internet and try again.',
+        timestamp: new Date().toISOString()
+      }]);
     } finally {
       setIsStreaming(false);
       inputRef.current?.focus();
@@ -376,6 +435,7 @@ export default function ChatPage() {
                 onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
                 placeholder="Ask about universities, scholarships, visa requirements..."
                 disabled={isStreaming}
+                autoFocus
                 className="input-field pr-14 h-14 text-base"
               />
               <button

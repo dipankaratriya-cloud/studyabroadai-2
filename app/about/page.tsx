@@ -33,7 +33,7 @@ export default function AboutPage() {
 
       <main>
         {/* Hero */}
-        <section className="w-full py-20 md:py-32 bg-gradient-to-br from-blue-500 to-purple-600">
+        <section className="w-full py-20 md:py-32 bg-[#0984e3]">
           <div className="container mx-auto max-w-4xl px-4 py-16 text-center">
             <h1 className="text-white text-5xl md:text-6xl font-black leading-tight">About StudyAbroadAI</h1>
             <p className="mt-4 text-xl md:text-2xl font-normal text-blue-100">

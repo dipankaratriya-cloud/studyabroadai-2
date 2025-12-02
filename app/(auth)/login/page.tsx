@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Mail, Lock, Eye, EyeOff, GraduationCap, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, GraduationCap, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -39,33 +39,38 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-[420px] animate-scale-in">
+    <div className="w-full max-w-[440px] animate-scale-in">
       {/* Logo */}
-      <div className="flex flex-col items-center justify-center mb-8">
-        <Link href="/" className="flex items-center gap-2.5 text-xl font-bold mb-2">
-          <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-            <GraduationCap className="h-6 w-6 text-white" />
+      <div className="flex flex-col items-center justify-center mb-10">
+        <Link href="/" className="flex items-center gap-3 mb-4 group">
+          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/25 group-hover:shadow-xl group-hover:shadow-primary/30 transition-all">
+            <GraduationCap className="h-7 w-7 text-white" />
           </div>
         </Link>
+        <h1 className="text-2xl font-bold text-foreground">StudyAbroadAI</h1>
       </div>
 
       {/* Card */}
-      <div className="bg-card rounded-2xl border shadow-xl p-8">
+      <div className="card-elevated p-8 sm:p-10">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Welcome Back
-          </h1>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <Sparkles className="h-4 w-4" />
+            Welcome back
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Sign in to your account
+          </h2>
           <p className="text-muted-foreground">
-            Sign in to continue your journey
+            Continue your study abroad journey
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
-            <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-start gap-3">
+            <svg className="h-5 w-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {error}
+            <span>{error}</span>
           </div>
         )}
 
@@ -74,8 +79,8 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-foreground mb-2">
               Email Address
             </label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <input
                 type="email"
                 value={email}
@@ -91,8 +96,8 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-foreground mb-2">
               Password
             </label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <div className="relative group">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -104,7 +109,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -150,7 +155,7 @@ export default function LoginPage() {
 
         <button
           onClick={handleGoogleLogin}
-          className="w-full h-12 flex items-center justify-center gap-3 rounded-xl border border-border bg-background text-foreground font-medium hover:bg-accent transition-colors"
+          className="w-full h-12 flex items-center justify-center gap-3 rounded-xl border-2 border-border bg-background text-foreground font-medium hover:bg-accent hover:border-primary/20 transition-all duration-200"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -168,6 +173,14 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+
+      {/* Footer */}
+      <p className="mt-8 text-center text-xs text-muted-foreground">
+        By signing in, you agree to our{' '}
+        <a href="#" className="underline hover:text-foreground">Terms of Service</a>
+        {' '}and{' '}
+        <a href="#" className="underline hover:text-foreground">Privacy Policy</a>
+      </p>
     </div>
   );
 }
