@@ -17,7 +17,9 @@ import {
   Calendar,
   Target,
   FileText,
-  Award
+  Award,
+  Menu,
+  X
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -124,6 +126,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<any>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -132,6 +135,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     };
     getUser();
   }, [supabase.auth]);
+
+  // Close sidebar when route changes
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     try {
@@ -165,17 +173,51 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-muted/30">
+      {/* Mobile Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b flex items-center justify-between px-4 lg:hidden">
+        <Link href="/dashboard" className="flex items-center">
+          <img src="/logo.png" alt="StudyAbroadAI" className="w-24 h-24 object-contain" />
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/chats/new"
+            className="flex items-center justify-center w-10 h-10 rounded-xl gradient-primary text-white"
+          >
+            <Plus className="h-5 w-5" />
+          </Link>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted hover:bg-accent transition-colors"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-card border-r flex flex-col">
-        {/* Logo */}
-        <div className="p-5 border-b">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
-              <GraduationCap className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-lg font-bold">StudyAbroadAI</span>
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-card border-r flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Logo - Hidden on mobile (shown in header) */}
+        <div className="p-5 border-b hidden lg:block">
+          <Link href="/dashboard" className="flex items-center justify-center">
+            <img src="/logo.png" alt="StudyAbroadAI" className="w-40 h-40 object-contain" />
           </Link>
         </div>
+
+        {/* Mobile header spacer */}
+        <div className="h-4 lg:hidden" />
 
         {/* New Chat Button */}
         <div className="p-4">
@@ -244,7 +286,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pt-16 lg:pt-0">
         {children}
       </main>
     </div>

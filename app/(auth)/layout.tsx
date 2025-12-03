@@ -17,11 +17,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold">StudyAbroadAI</span>
+          <Link href="/" className="flex items-center">
+            <img src="/logo.png" alt="StudyAbroadAI" className="w-48 h-48 object-contain" />
           </Link>
 
           {/* Content */}

@@ -258,7 +258,7 @@
 
   /* Section spacing */
   .section {
-    @apply py-24 lg:py-32;
+    @apply py-16 sm:py-24 lg:py-32;
   }
 
   /* Container */

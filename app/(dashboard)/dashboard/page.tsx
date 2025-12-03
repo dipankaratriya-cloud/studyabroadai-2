@@ -206,18 +206,18 @@ export default function DashboardPage() {
       {/* Hero Section */}
       <div ref={heroRef} className="relative overflow-hidden border-b bg-card">
         <div className="absolute inset-0 gradient-mesh opacity-50" />
-        <div className="relative px-8 py-12">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-6 sm:py-10 lg:py-12">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
-                <div className="dashboard-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 opacity-0">
-                  <Sparkles className="h-4 w-4" />
+                <div className="dashboard-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-3 sm:mb-4 opacity-0">
+                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
                   Welcome back
                 </div>
-                <h1 className="dashboard-title text-4xl font-bold mb-3 opacity-0">
+                <h1 className="dashboard-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 opacity-0">
                   Hello, {userName}!
                 </h1>
-                <p className="dashboard-subtitle text-lg text-muted-foreground max-w-xl opacity-0">
+                <p className="dashboard-subtitle text-sm sm:text-base lg:text-lg text-muted-foreground max-w-xl opacity-0">
                   Continue exploring universities or start a new conversation with your AI advisor.
                 </p>
               </div>
@@ -225,12 +225,12 @@ export default function DashboardPage() {
                 onClick={createNewChat}
                 disabled={creating}
                 size="lg"
-                className="dashboard-cta btn-primary h-12 px-6 hidden md:flex opacity-0"
+                className="dashboard-cta btn-primary h-10 sm:h-12 px-4 sm:px-6 hidden sm:flex opacity-0"
               >
                 {creating ? (
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin mr-2" />
                 ) : (
-                  <Plus className="h-5 w-5 mr-2" />
+                  <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 )}
                 New Conversation
               </Button>
@@ -239,82 +239,82 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div ref={contentRef} className="px-8 py-10">
-        <div className="max-w-6xl mx-auto space-y-10">
+      <div ref={contentRef} className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+        <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 lg:space-y-10">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {/* Conversations Card */}
             <div className="stat-card-animate stat-card group cursor-pointer hover:border-primary/20 transition-all duration-300 opacity-0">
-              <div className="flex items-start justify-between mb-4">
-                <div className="icon-box icon-box-lg gradient-primary-subtle">
-                  <MessageSquare className="h-6 w-6 text-primary" />
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="icon-box w-10 h-10 sm:w-14 sm:h-14 gradient-primary-subtle rounded-lg sm:rounded-xl">
+                  <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />
               </div>
-              <div className="text-4xl font-bold mb-1">{stats.totalChats}</div>
-              <p className="text-muted-foreground">Total Conversations</p>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1">{stats.totalChats}</div>
+              <p className="text-xs sm:text-sm text-muted-foreground">Total Conversations</p>
             </div>
 
             {/* Comparisons Card */}
             <div className="stat-card-animate stat-card group cursor-pointer hover:border-primary/20 transition-all duration-300 opacity-0">
-              <div className="flex items-start justify-between mb-4">
-                <div className="icon-box icon-box-lg bg-primary/10">
-                  <GitCompare className="h-6 w-6 text-primary" />
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="icon-box w-10 h-10 sm:w-14 sm:h-14 bg-primary/10 rounded-lg sm:rounded-xl">
+                  <GitCompare className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                <Target className="h-5 w-5 text-primary" />
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <div className="text-4xl font-bold mb-1">{stats.totalComparisons}</div>
-              <p className="text-muted-foreground">Saved Comparisons</p>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1">{stats.totalComparisons}</div>
+              <p className="text-xs sm:text-sm text-muted-foreground">Saved Comparisons</p>
             </div>
 
             {/* Quick Start Card */}
             <div
               onClick={createNewChat}
-              className="stat-card-animate stat-card group cursor-pointer hover:border-primary/30 hover:shadow-lg transition-all duration-300 gradient-primary-subtle opacity-0"
+              className="stat-card-animate stat-card group cursor-pointer hover:border-primary/30 hover:shadow-lg transition-all duration-300 gradient-primary-subtle opacity-0 col-span-2 sm:col-span-1"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="icon-box icon-box-lg gradient-primary">
-                  <Zap className="h-6 w-6 text-white" />
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="icon-box w-10 h-10 sm:w-14 sm:h-14 gradient-primary rounded-lg sm:rounded-xl">
+                  <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
-                <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-primary group-hover:translate-x-1 transition-transform" />
               </div>
-              <div className="text-xl font-bold mb-1">Quick Start</div>
-              <p className="text-muted-foreground">Start a new AI conversation</p>
+              <div className="text-lg sm:text-xl font-bold mb-1">Quick Start</div>
+              <p className="text-xs sm:text-sm text-muted-foreground">Start a new AI conversation</p>
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             <Link href="/dashboard/comparisons" className="block">
-              <div className="quick-action-card card-elevated p-6 group hover:border-primary/20 transition-all duration-300 opacity-0">
-                <div className="flex items-center gap-5">
-                  <div className="icon-box icon-box-lg bg-primary/10 group-hover:scale-110 transition-transform">
-                    <GitCompare className="h-6 w-6 text-primary" />
+              <div className="quick-action-card card-elevated p-4 sm:p-6 group hover:border-primary/20 transition-all duration-300 opacity-0">
+                <div className="flex items-center gap-3 sm:gap-5">
+                  <div className="icon-box w-10 h-10 sm:w-14 sm:h-14 bg-primary/10 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                    <GitCompare className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-1">View Comparisons</h3>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold mb-0.5 sm:mb-1">View Comparisons</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       {stats.totalComparisons} saved comparison{stats.totalComparisons !== 1 ? 's' : ''} to review
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all flex-shrink-0" />
                 </div>
               </div>
             </Link>
 
             <Link href="/dashboard/profile" className="block">
-              <div className="quick-action-card card-elevated p-6 group hover:border-emerald-500/20 transition-all duration-300 opacity-0">
-                <div className="flex items-center gap-5">
-                  <div className="icon-box icon-box-lg bg-emerald-500/10 group-hover:scale-110 transition-transform">
-                    <User className="h-6 w-6 text-emerald-500" />
+              <div className="quick-action-card card-elevated p-4 sm:p-6 group hover:border-emerald-500/20 transition-all duration-300 opacity-0">
+                <div className="flex items-center gap-3 sm:gap-5">
+                  <div className="icon-box w-10 h-10 sm:w-14 sm:h-14 bg-emerald-500/10 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-1">Your Profile</h3>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold mb-0.5 sm:mb-1">Your Profile</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       Manage your preferences and settings
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all flex-shrink-0" />
                 </div>
               </div>
             </Link>
@@ -322,20 +322,21 @@ export default function DashboardPage() {
 
           {/* Recent Conversations */}
           <div className="recent-section card-elevated overflow-hidden opacity-0">
-            <div className="p-6 border-b flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="icon-box icon-box-md gradient-primary-subtle">
-                  <Clock className="h-5 w-5 text-primary" />
+            <div className="p-4 sm:p-6 border-b flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="icon-box w-9 h-9 sm:w-11 sm:h-11 gradient-primary-subtle rounded-lg sm:rounded-xl">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold">Recent Conversations</h2>
-                  <p className="text-sm text-muted-foreground">Continue where you left off</p>
+                  <h2 className="text-base sm:text-xl font-semibold">Recent Conversations</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Continue where you left off</p>
                 </div>
               </div>
               <Link href="/dashboard/chats">
-                <Button variant="ghost" className="gap-2">
-                  View All
-                  <ArrowRight className="h-4 w-4" />
+                <Button variant="ghost" className="gap-1 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
+                  <span className="hidden sm:inline">View All</span>
+                  <span className="sm:hidden">All</span>
+                  <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </Link>
             </div>
@@ -344,15 +345,15 @@ export default function DashboardPage() {
               {stats.recentChats.length > 0 ? (
                 stats.recentChats.map((chat, index) => (
                   <Link key={chat.id} href={`/dashboard/chats/${chat.id}`}>
-                    <div className="chat-item p-5 flex items-center gap-4 hover:bg-accent/50 transition-colors group opacity-0">
-                      <div className="icon-box icon-box-md bg-primary/10 group-hover:bg-primary/15 transition-colors">
-                        <MessageSquare className="h-5 w-5 text-primary" />
+                    <div className="chat-item p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:bg-accent/50 transition-colors group opacity-0">
+                      <div className="icon-box w-9 h-9 sm:w-11 sm:h-11 bg-primary/10 group-hover:bg-primary/15 transition-colors rounded-lg sm:rounded-xl">
+                        <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate group-hover:text-primary transition-colors">
+                        <p className="text-sm sm:text-base font-medium truncate group-hover:text-primary transition-colors">
                           {chat.title || 'Untitled Conversation'}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {new Date(chat.updated_at).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -362,24 +363,24 @@ export default function DashboardPage() {
                           })}
                         </p>
                       </div>
-                      <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
                     </div>
                   </Link>
                 ))
               ) : (
-                <div className="p-12 text-center">
-                  <div className="icon-box icon-box-lg gradient-primary-subtle mx-auto mb-4">
-                    <MessageSquare className="h-7 w-7 text-primary" />
+                <div className="p-6 sm:p-12 text-center">
+                  <div className="icon-box w-12 h-12 sm:w-16 sm:h-16 gradient-primary-subtle mx-auto mb-3 sm:mb-4 rounded-xl">
+                    <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No conversations yet</h3>
-                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">No conversations yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4 sm:mb-6 max-w-sm mx-auto">
                     Start your first conversation with Aanya, your AI study abroad advisor.
                   </p>
-                  <Button onClick={createNewChat} disabled={creating} className="btn-primary">
+                  <Button onClick={createNewChat} disabled={creating} className="btn-primary text-sm sm:text-base">
                     {creating ? (
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin mr-2" />
                     ) : (
-                      <Plus className="h-5 w-5 mr-2" />
+                      <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     )}
                     Start First Conversation
                   </Button>
@@ -389,33 +390,33 @@ export default function DashboardPage() {
           </div>
 
           {/* Tips Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="tip-card p-6 rounded-2xl border bg-gradient-to-br from-primary/5 to-transparent opacity-0">
-              <div className="icon-box icon-box-md bg-primary/10 mb-4">
-                <GraduationCap className="h-5 w-5 text-primary" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+            <div className="tip-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border bg-gradient-to-br from-primary/5 to-transparent opacity-0">
+              <div className="icon-box w-9 h-9 sm:w-11 sm:h-11 bg-primary/10 mb-3 sm:mb-4 rounded-lg sm:rounded-xl">
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <h3 className="font-semibold mb-2">Get Recommendations</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-sm sm:text-base font-semibold mb-1 sm:mb-2">Get Recommendations</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Tell Aanya about your goals and get personalized university suggestions.
               </p>
             </div>
 
-            <div className="tip-card p-6 rounded-2xl border bg-gradient-to-br from-primary/5 to-transparent opacity-0">
-              <div className="icon-box icon-box-md bg-primary/10 mb-4">
-                <GitCompare className="h-5 w-5 text-primary" />
+            <div className="tip-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border bg-gradient-to-br from-primary/5 to-transparent opacity-0">
+              <div className="icon-box w-9 h-9 sm:w-11 sm:h-11 bg-primary/10 mb-3 sm:mb-4 rounded-lg sm:rounded-xl">
+                <GitCompare className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <h3 className="font-semibold mb-2">Compare Universities</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-sm sm:text-base font-semibold mb-1 sm:mb-2">Compare Universities</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Select up to 3 universities to compare side by side.
               </p>
             </div>
 
-            <div className="tip-card p-6 rounded-2xl border bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0">
-              <div className="icon-box icon-box-md bg-emerald-500/10 mb-4">
-                <Target className="h-5 w-5 text-emerald-500" />
+            <div className="tip-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0">
+              <div className="icon-box w-9 h-9 sm:w-11 sm:h-11 bg-emerald-500/10 mb-3 sm:mb-4 rounded-lg sm:rounded-xl">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />
               </div>
-              <h3 className="font-semibold mb-2">Track Progress</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-sm sm:text-base font-semibold mb-1 sm:mb-2">Track Progress</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Save your favorite universities and track your application journey.
               </p>
             </div>
