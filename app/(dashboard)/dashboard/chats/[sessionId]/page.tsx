@@ -6,8 +6,10 @@ import { parseCollegeRecommendations, hasCollegeRecommendations, CollegeRecommen
 import { CollegeCard } from '@/components/CollegeCard';
 import { ComparisonCard } from '@/components/ComparisonCard';
 import { Button } from '@/components/ui/button';
-import { GitCompare, X, Bookmark, MapPin, Check, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { GitCompare, X, Bookmark, MapPin, Check, Send, Bot, User, Sparkles, Loader2, GraduationCap } from 'lucide-react';
 import { useProfile } from '@/components/providers/ProfileContext';
+import { gsap } from '@/lib/gsap';
+import { useGSAP } from '@gsap/react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -118,6 +120,11 @@ export default function ChatPage() {
   const [savingComparison, setSavingComparison] = useState(false);
   const { setProfile: setContextProfile } = useProfile();
 
+  // Refs for animations
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const floatingOrbsRef = useRef<HTMLDivElement>(null);
+
   const handleSaveToggle = useCallback((college: CollegeRecommendation) => {
     setSavedColleges(prev => {
       const isAlreadySaved = prev.some(c => c.name === college.name);
@@ -207,6 +214,76 @@ export default function ChatPage() {
       return () => clearTimeout(timer);
     }
   }, [loading, isStreaming]);
+
+  // Floating orbs animation
+  useGSAP(() => {
+    if (floatingOrbsRef.current) {
+      const orbs = floatingOrbsRef.current.querySelectorAll('.floating-orb');
+      orbs.forEach((orb, i) => {
+        gsap.to(orb, {
+          y: -30 + (i * 10),
+          x: 15 - (i * 8),
+          duration: 4 + (i * 0.5),
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+          delay: i * 0.3
+        });
+        gsap.to(orb, {
+          scale: 1.1,
+          duration: 5 + (i * 0.7),
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+          delay: i * 0.5
+        });
+      });
+    }
+  }, { scope: floatingOrbsRef, dependencies: [loading] });
+
+  // Sidebar floating cards animation
+  useEffect(() => {
+    if (sidebarRef.current && !loading) {
+      const compareCards = sidebarRef.current.querySelectorAll('.compare-card');
+      const savedCards = sidebarRef.current.querySelectorAll('.saved-card');
+
+      compareCards.forEach((card, i) => {
+        gsap.to(card, {
+          y: -6 + (i * 2),
+          duration: 2.5 + (i * 0.3),
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+          delay: i * 0.4
+        });
+      });
+
+      savedCards.forEach((card, i) => {
+        gsap.to(card, {
+          y: -5 + (i * 2),
+          duration: 2.8 + (i * 0.25),
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+          delay: i * 0.5
+        });
+      });
+    }
+  }, [loading, selectedColleges, savedColleges]);
+
+  // Message entrance animation
+  useEffect(() => {
+    if (chatContainerRef.current && messages.length > 0) {
+      const allMessages = chatContainerRef.current.querySelectorAll('.message-bubble');
+      const lastMessage = allMessages[allMessages.length - 1];
+      if (lastMessage) {
+        gsap.fromTo(lastMessage,
+          { opacity: 0, y: 20, scale: 0.95 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'back.out(1.7)' }
+        );
+      }
+    }
+  }, [messages.length]);
 
   const sendMessage = async () => {
     if (!input.trim() || isStreaming) return;
@@ -323,12 +400,20 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-full w-full bg-background">
+    <div className="flex h-full w-full bg-background relative overflow-hidden">
+      {/* Floating Background Orbs */}
+      <div ref={floatingOrbsRef} className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="floating-orb absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        <div className="floating-orb absolute top-1/3 right-20 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+        <div className="floating-orb absolute bottom-20 left-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
+        <div className="floating-orb absolute bottom-1/3 right-1/3 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Main Chat */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col relative z-10">
         {/* Header */}
-        <header className="h-16 border-b bg-card flex items-center px-6 gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center px-6 gap-3">
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center animate-pulse-slow">
             <Bot className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -348,7 +433,7 @@ export default function ChatPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div ref={chatContainerRef} className="max-w-4xl mx-auto space-y-6">
             {messages.length === 0 && (
               <div className="flex gap-4">
                 <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
@@ -370,7 +455,7 @@ export default function ChatPage() {
               const isStreamingMessage = isStreaming && isLastMessage && msg.role === 'assistant';
 
               return (
-                <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                <div key={i} className={`message-bubble flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                     msg.role === 'assistant' ? 'gradient-primary' : 'bg-muted'
                   }`}>
@@ -455,7 +540,7 @@ export default function ChatPage() {
       </main>
 
       {/* Right Sidebar */}
-      <aside className="w-72 border-l bg-card flex flex-col overflow-hidden">
+      <aside ref={sidebarRef} className="w-72 border-l bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden relative z-10">
         {/* Compare Section */}
         <div className="p-5 flex-1 overflow-y-auto border-b">
           <h2 className="font-semibold mb-4 flex items-center gap-2">
@@ -474,7 +559,7 @@ export default function ChatPage() {
               {selectedColleges.map((college, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20"
+                  className="compare-card flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20 transition-shadow hover:shadow-md"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{college.name}</p>
@@ -530,7 +615,7 @@ export default function ChatPage() {
               {savedColleges.map((college, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800"
+                  className="saved-card flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800 transition-shadow hover:shadow-md"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{college.name}</p>

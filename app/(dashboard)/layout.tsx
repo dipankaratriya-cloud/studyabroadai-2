@@ -134,8 +134,23 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [supabase.auth]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
+    try {
+      // Clear client-side session first
+      await supabase.auth.signOut();
+
+      // Then call server-side route to clear cookies
+      await fetch('/auth/signout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      // Force full page reload to landing page
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Force redirect even on error
+      window.location.href = '/';
+    }
   };
 
   const isActive = (href: string) => {
