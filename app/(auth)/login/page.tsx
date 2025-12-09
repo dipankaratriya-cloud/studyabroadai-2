@@ -31,10 +31,13 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    // Always use the current browser origin - this ensures correct redirect
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log('OAuth redirect URL:', redirectUrl); // Debug log
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${siteUrl}/auth/callback` },
+      options: { redirectTo: redirectUrl },
     });
     if (error) setError(error.message);
   };
