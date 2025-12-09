@@ -174,9 +174,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-muted/30">
       {/* Mobile Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b flex items-center justify-between px-4 lg:hidden">
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-card border-b flex items-center justify-between px-4 lg:hidden">
         <Link href="/dashboard" className="flex items-center">
-          <img src="/logo.png" alt="StudyAbroadAI" className="w-24 h-24 object-contain" />
+          <img src="/logo.png" alt="StudyAbroadAI" className="w-28 h-10 object-contain" />
         </Link>
         <div className="flex items-center gap-2">
           <Link
@@ -210,9 +210,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo - Hidden on mobile (shown in header) */}
-        <div className="p-5 border-b hidden lg:block">
+        <div className="p-4 border-b hidden lg:block">
           <Link href="/dashboard" className="flex items-center justify-center">
-            <img src="/logo.png" alt="StudyAbroadAI" className="w-40 h-40 object-contain" />
+            <img src="/logo.png" alt="StudyAbroadAI" className="w-36 h-12 object-contain" />
           </Link>
         </div>
 
@@ -286,7 +286,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto pt-16 lg:pt-0">
+      <main className="flex-1 overflow-auto pt-14 lg:pt-0">
         {children}
       </main>
     </div>

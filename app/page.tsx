@@ -123,14 +123,9 @@ export default function LandingPage() {
   useGSAP(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-    tl.fromTo('.hero-badge',
-      { y: 30, opacity: 0, scale: 0.9 },
-      { y: 0, opacity: 1, scale: 1, duration: 0.8 }
-    )
-    .fromTo('.hero-title',
+    tl.fromTo('.hero-title',
       { y: 60, opacity: 0 },
-      { y: 0, opacity: 1, duration: 1 },
-      '-=0.4'
+      { y: 0, opacity: 1, duration: 1 }
     )
     .fromTo('.hero-subtitle',
       { y: 40, opacity: 0 },
@@ -450,7 +445,7 @@ export default function LandingPage() {
       >
         <div className="container-lg py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="StudyAbroadAI" className="w-28 h-28 sm:w-44 sm:h-44 object-contain" />
+            <img src="/logo.png" alt="StudyAbroadAI" className="w-32 h-10 sm:w-40 sm:h-12 object-contain" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -563,11 +558,6 @@ export default function LandingPage() {
 
             {/* Center Column - Main Content */}
             <div className="flex flex-col items-center justify-center text-center px-2 sm:px-4">
-              <div className="hero-badge inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20 text-primary text-xs sm:text-sm mb-6 sm:mb-8 opacity-0">
-                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span>AI-Powered Study Abroad Guidance</span>
-              </div>
-
               <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight mb-4 sm:mb-6 opacity-0">
                 Your Journey to{' '}
                 <span className="relative inline-block text-primary">
@@ -797,7 +787,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
             <div className="col-span-2">
               <Link href="/" className="flex items-center mb-4">
-                <img src="/logo.png" alt="StudyAbroadAI" className="w-28 h-28 sm:w-44 sm:h-44 object-contain" />
+                <img src="/logo.png" alt="StudyAbroadAI" className="w-32 h-10 sm:w-40 sm:h-12 object-contain" />
               </Link>
               <p className="text-sm sm:text-base text-muted-foreground max-w-sm mb-4 sm:mb-6">
                 AI-powered guidance for Indian students pursuing global education. Your dream university is just a conversation away.
