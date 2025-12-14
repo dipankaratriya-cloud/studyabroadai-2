@@ -5,11 +5,11 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function streamChatCompletion(messages: ChatCompletionMessageParam[], systemPrompt: string) {
   return await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: 'compound-beta',
     messages: [{ role: 'system', content: systemPrompt }, ...messages],
     stream: true,
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 4000,
   });
 }
 
